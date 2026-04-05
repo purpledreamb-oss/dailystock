@@ -715,7 +715,7 @@ def generate_recommendation(symbol, name, price, change, pct, score, breakdown, 
 # Main pipeline
 # ---------------------------------------------------------------------------
 
-def run_pick_pipeline():
+def run_pick_pipeline(force=False):
     """Run the full stock screening and picking pipeline."""
     now = datetime.now(TW_TZ)
     today = now.strftime("%Y-%m-%d")
@@ -725,8 +725,12 @@ def run_pick_pipeline():
     tw_trading = is_trading_day(today, "TW")
     us_trading = is_trading_day(today, "US")
 
-    if not tw_trading and not us_trading:
+    if not tw_trading and not us_trading and not force:
         return {"status": "skip", "date": today, "reason": "Not a trading day"}
+
+    if force:
+        tw_trading = True
+        us_trading = True
 
     steps.append(f"Trading day check: TW={tw_trading}, US={us_trading}")
 
@@ -876,7 +880,7 @@ class handler(BaseHTTPRequestHandler):
 
         # Run pipeline
         try:
-            result = run_pick_pipeline()
+            result = run_pick_pipeline(force=force)
             self._send_json(200, result)
         except Exception as e:
             self._send_json(500, {"error": str(e)})

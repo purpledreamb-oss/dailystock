@@ -1,16 +1,17 @@
 {
-  "functions": {
-    "api/pick.py": { "maxDuration": 10 },
-    "api/pick_cron.py": { "maxDuration": 60 },
-    "api/quote.py": { "maxDuration": 15 },
-    "api/chart.py": { "maxDuration": 15 },
-    "api/fundamental.py": { "maxDuration": 15 }
-  },
-  "rewrites": [
-    { "source": "/api/pick", "destination": "/api/pick" },
-    { "source": "/api/pick_cron", "destination": "/api/pick_cron" },
-    { "source": "/api/quote", "destination": "/api/quote" },
-    { "source": "/api/chart", "destination": "/api/chart" },
-    { "source": "/api/fundamental", "destination": "/api/fundamental" }
+  "builds": [
+    { "src": "api/pick.py", "use": "@vercel/python", "config": { "maxDuration": 10 } },
+    { "src": "api/pick_cron.py", "use": "@vercel/python", "config": { "maxDuration": 60 } },
+    { "src": "api/quote.py", "use": "@vercel/python", "config": { "maxDuration": 15 } },
+    { "src": "api/chart.py", "use": "@vercel/python", "config": { "maxDuration": 15 } },
+    { "src": "api/fundamental.py", "use": "@vercel/python", "config": { "maxDuration": 15 } },
+    { "src": "index.html", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/pick", "dest": "/api/pick.py" },
+    { "src": "/api/pick_cron", "dest": "/api/pick_cron.py" },
+    { "src": "/api/quote", "dest": "/api/quote.py" },
+    { "src": "/api/chart", "dest": "/api/chart.py" },
+    { "src": "/api/fundamental", "dest": "/api/fundamental.py" }
   ]
 }
