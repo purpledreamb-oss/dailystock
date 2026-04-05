@@ -695,7 +695,7 @@ def generate_recommendation(symbol, name, price, change, pct, score, breakdown, 
                 "content-type": "application/json",
             },
             json={
-                "model": "claude-sonnet-4-20250514",
+                "model": "claude-sonnet-4-6-20250514",
                 "max_tokens": 500,
                 "tools": [{"type": "web_search_20250305", "name": "web_search", "max_uses": 2}],
                 "messages": [{"role": "user", "content": prompt}],
@@ -705,9 +705,14 @@ def generate_recommendation(symbol, name, price, change, pct, score, breakdown, 
         if resp.status_code == 200:
             data = resp.json()
             parts = [b["text"] for b in data.get("content", []) if b.get("type") == "text"]
-            return "\n".join(parts).strip() if parts else None
-    except Exception:
-        pass
+            text = "\n".join(parts).strip()
+            if text:
+                return text
+        else:
+            # Log error for debugging
+            print(f"Anthropic API error {resp.status_code}: {resp.text[:200]}")
+    except Exception as e:
+        print(f"Anthropic API exception: {e}")
     return f"{name}（{symbol}）綜合評分 {score} 分，技術面與基本面均呈正向訊號，建議關注。"
 
 
