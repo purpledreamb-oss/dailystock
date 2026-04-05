@@ -44,69 +44,103 @@ YAHOO_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 # Candidate stock pools
 # ---------------------------------------------------------------------------
 US_CANDIDATES = [
-    # Mega-cap tech
+    # Mega-cap tech (10)
     "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "AVGO", "TSM", "ORCL",
-    # Semiconductors
+    # Semiconductors (20)
     "AMD", "QCOM", "TXN", "INTC", "MU", "MRVL", "KLAC", "LRCX", "AMAT", "ON",
-    # Software & Cloud
+    "NXPI", "MPWR", "SWKS", "QRVO", "WOLF", "MCHP", "ADI", "ASML", "GFS", "CRUS",
+    # Software & Cloud (40)
     "CRM", "ADBE", "NOW", "INTU", "SNOW", "PANW", "CRWD", "PLTR", "DDOG", "ZS",
     "WDAY", "TEAM", "HUBS", "MNDY", "NET", "FTNT", "MDB", "VEEV", "SPLK", "SNPS",
-    # Financials
+    "CDNS", "ANSS", "MANH", "PCOR", "ESTC", "QLYS", "TENB", "CYBR", "VRNS", "ALTR",
+    "DOCU", "PAYC", "SMAR", "APPF", "ZI", "TYL", "NICE", "TWLO", "U", "TOST",
+    # Financials (30)
     "JPM", "V", "MA", "BAC", "WFC", "GS", "MS", "BLK", "SCHW", "AXP",
     "C", "USB", "PNC", "TFC", "BK", "CME", "ICE", "SPGI", "MCO", "FIS",
-    # Healthcare & Pharma
+    "MSCI", "NDAQ", "CBOE", "TROW", "STT", "NTRS", "CFG", "FITB", "HBAN", "RF",
+    # Healthcare & Pharma (40)
     "UNH", "JNJ", "LLY", "ABBV", "MRK", "PFE", "TMO", "ABT", "DHR", "BMY",
     "AMGN", "GILD", "ISRG", "VRTX", "REGN", "MDT", "ZTS", "SYK", "BSX", "ELV",
-    # Consumer
-    "HD", "COST", "PG", "KO", "PEP", "WMT", "MCD", "NKE", "SBUX", "TGT",
-    "LOW", "TJX", "ROST", "DG", "DLTR", "CL", "KMB", "GIS", "SJM", "HSY",
-    # Media & Entertainment
+    "A", "IQV", "BDX", "CI", "HUM", "CNC", "DXCM", "IDXX", "HOLX", "MTD",
+    "WST", "RMD", "ALGN", "TFX", "TECH", "PODD", "INSP", "RVMD", "PCVX", "NBIX",
+    # Consumer Staples (20)
+    "PG", "KO", "PEP", "WMT", "COST", "CL", "KMB", "GIS", "SJM", "HSY",
+    "MDLZ", "KHC", "STZ", "MKC", "CHD", "CLX", "SPC", "KDP", "MNST", "K",
+    # Consumer Discretionary (30)
+    "HD", "MCD", "NKE", "SBUX", "TGT", "LOW", "TJX", "ROST", "DG", "DLTR",
+    "BURL", "ORLY", "AZO", "BBY", "POOL", "TSCO", "DECK", "LULU", "RH", "GRMN",
+    "YUM", "CMG", "DPZ", "WYNN", "LVS", "MAR", "HLT", "RCL", "NCLH", "CCL",
+    # Media & Entertainment (20)
     "NFLX", "DIS", "CMCSA", "WBD", "PARA", "ROKU", "SPOT", "TTD", "RBLX", "EA",
-    # Industrials
+    "TTWO", "MTCH", "PINS", "SNAP", "BILI", "LYV", "IMAX", "WMG", "SONO", "CHTR",
+    # Industrials (40)
     "CAT", "DE", "GE", "HON", "UNP", "UPS", "RTX", "LMT", "BA", "GD",
     "MMM", "EMR", "ITW", "ETN", "PH", "ROK", "WM", "RSG", "FAST", "CTAS",
-    # Energy
+    "FDX", "CSX", "NSC", "DAL", "UAL", "LUV", "JBLU", "UBER", "LYFT", "ABNB",
+    "IR", "AME", "DOV", "NDSN", "SWK", "GWW", "EXPD", "XPO", "ODFL", "SAIA",
+    # Aerospace & Defense (10)
+    "NOC", "HII", "TDG", "HWM", "TXT", "CW", "SPR", "AXON", "LDOS", "KTOS",
+    # Energy (20)
     "XOM", "CVX", "COP", "SLB", "EOG", "MPC", "PSX", "VLO", "OXY", "HAL",
-    # Utilities & REITs
-    "NEE", "DUK", "SO", "D", "AEP", "AMT", "PLD", "CCI", "EQIX", "SPG",
-    # Communication
-    "TMUS", "VZ", "T", "CHTR",
-    # Materials
-    "LIN", "APD", "ECL", "NEM", "FCX", "NUE",
-    # Auto & EV
-    "GM", "F", "RIVN", "LCID", "LI", "NIO",
-    # AI & Emerging
+    "DVN", "FANG", "PXD", "HES", "MRO", "APA", "TRGP", "WMB", "KMI", "OKE",
+    # Utilities (10)
+    "NEE", "DUK", "SO", "D", "AEP", "SRE", "EXC", "XEL", "WEC", "ES",
+    # REITs (15)
+    "AMT", "PLD", "CCI", "EQIX", "SPG", "O", "DLR", "PSA", "WELL", "AVB",
+    "ARE", "VTR", "MAA", "UDR", "KIM",
+    # Communication (10)
+    "TMUS", "VZ", "T", "LUMN", "SATS", "IRDM", "GSAT", "ASTS", "RBRK", "ZM",
+    # Materials (15)
+    "LIN", "APD", "ECL", "NEM", "FCX", "NUE", "STLD", "CF", "MOS", "ALB",
+    "VMC", "MLM", "BLL", "IP", "PKG",
+    # Auto & EV (10)
+    "GM", "F", "RIVN", "LCID", "LI", "NIO", "XPEV", "PSNY", "QS", "GOEV",
+    # AI & Emerging (20)
     "ARM", "SMCI", "AI", "PATH", "S", "IONQ", "RKLB", "BILL", "CFLT", "GTLB",
-    # Crypto & Fintech
-    "COIN", "SQ", "PYPL", "AFRM", "SOFI", "HOOD", "MARA", "RIOT",
-    # Biotech
-    "MRNA", "BIIB", "ALNY", "SGEN", "DXCM", "IDXX",
-    # China ADR
-    "BABA", "JD", "PDD", "BIDU",
-    # Aerospace & Defense
-    "NOC", "HII", "TDG", "HWM",
-    # Food & Beverage
-    "MDLZ", "KHC", "STZ", "BF.B",
-    # Insurance
-    "AIG", "MET", "PRU", "ALL",
-    # Transport & Logistics
-    "FDX", "CSX", "NSC", "DAL", "UAL", "LUV",
-    # Retail & E-commerce
-    "SHOP", "ETSY", "EBAY", "W", "CHWY", "BURL",
-    # Cybersecurity
-    "OKTA", "RPD",
+    "SOUN", "BBAI", "AMBA", "VRT", "ANET", "PSTG", "NTAP", "HPE", "DELL", "KEYS",
+    # Crypto & Fintech (15)
+    "COIN", "SQ", "PYPL", "AFRM", "SOFI", "HOOD", "MARA", "RIOT", "CLSK", "HUT",
+    "UPST", "RELY", "FOUR", "GPN", "FI",
+    # Biotech (15)
+    "MRNA", "BIIB", "ALNY", "SGEN", "BMRN", "EXAS", "NTRA", "RARE", "TWST", "CRSP",
+    "BEAM", "NTLA", "EDIT", "FATE", "LEGN",
+    # China ADR (10)
+    "BABA", "JD", "PDD", "BIDU", "NTES", "TME", "FUTU", "ZTO", "MNSO", "YMM",
+    # Insurance (10)
+    "AIG", "MET", "PRU", "ALL", "TRV", "AFL", "PGR", "CB", "HIG", "GL",
+    # Retail & E-commerce (10)
+    "SHOP", "ETSY", "EBAY", "W", "CHWY", "CPNG", "WISH", "MELI", "SE", "GLBE",
+    # Food & Beverage (10)
+    "BF.B", "TAP", "SAM", "CELH", "COKE", "FIZZ", "BROS", "SG", "FRPT", "USFD",
+    # Cybersecurity (10)
+    "OKTA", "RPD", "FICO", "AVPT", "RDWR", "TMCI", "CACI", "SAIC", "BWXT", "ESLT",
 ]
 
 TW_CANDIDATES = [
-    # 權值股
+    # 權值股 TOP 10
     "2330", "2317", "2454", "2412", "2308", "3711", "2881", "2882", "2891", "2303",
-    # 金融股
+    # 金融股 (15)
     "2886", "2884", "2885", "2887", "2880", "2883", "2890", "5880", "2892", "5871",
-    # 電子股
-    "3008", "2357", "2382", "2327", "3034", "2395", "3037", "6669", "2379", "3231",
-    "2345", "3443", "2301", "6415", "3529", "2376", "4966", "2408", "3706", "6488",
-    # 傳產龍頭
+    "2888", "2834", "2801", "2823", "2838",
+    # 半導體 (15)
+    "3008", "2357", "2382", "3034", "3037", "6669", "3231", "3529", "4966", "6488",
+    "5274", "3661", "2436", "6770", "8046",
+    # 電子零組件 (15)
+    "2327", "2395", "2379", "2345", "3443", "2301", "6415", "2376", "2408", "3706",
+    "2049", "3036", "2354", "6285", "5388",
+    # IC 設計 (10)
+    "3227", "3533", "5269", "6531", "3035", "2458", "6414", "2379", "8299", "5483",
+    # 光電 & 面板 (5)
+    "3481", "2409", "6116", "3491", "2426",
+    # 傳產龍頭 (15)
     "6505", "1301", "1303", "2002", "1216", "2207", "4904", "1101", "1102", "9910",
+    "1326", "1402", "2105", "9921", "2912",
+    # 生技醫療 (5)
+    "4743", "6446", "1760", "4142", "6472",
+    # 航運 & 鋼鐵 (5)
+    "2603", "2609", "2615", "2002", "2006",
+    # 電信 & 通路 (5)
+    "2412", "3045", "6271", "2474", "5903",
 ]
 
 # ---------------------------------------------------------------------------
@@ -227,7 +261,7 @@ def fetch_chart_data(symbol, session=None):
     url = f"https://query1.finance.yahoo.com/v8/finance/chart/{yahoo_sym}?range=6mo&interval=1d"
     s = session or requests
     try:
-        resp = s.get(url, headers={"User-Agent": YAHOO_UA}, timeout=12)
+        resp = s.get(url, headers={"User-Agent": YAHOO_UA}, timeout=8)
         if resp.status_code != 200:
             return None
         data = resp.json()
@@ -284,7 +318,7 @@ def fetch_fundamental_batch(symbols, session):
                 f"https://query2.finance.yahoo.com/v10/finance/quoteSummary/{yahoo_sym}"
                 f"?modules=defaultKeyStatistics,summaryDetail,price&crumb={crumb}"
             )
-            resp = session.get(url, timeout=12)
+            resp = session.get(url, timeout=8)
             if resp.status_code != 200:
                 return sym, None
             body = resp.json()
@@ -311,7 +345,7 @@ def fetch_fundamental_batch(symbols, session):
         except Exception:
             return sym, None
 
-    with ThreadPoolExecutor(max_workers=20) as pool:
+    with ThreadPoolExecutor(max_workers=30) as pool:
         futures = {pool.submit(fetch_one, s): s for s in symbols}
         for f in as_completed(futures):
             sym, data = f.result()
@@ -806,7 +840,7 @@ def run_pick_pipeline(force=False):
     session = requests.Session()
     session.headers.update({"User-Agent": YAHOO_UA})
 
-    with ThreadPoolExecutor(max_workers=20) as pool:
+    with ThreadPoolExecutor(max_workers=30) as pool:
         futures = {pool.submit(fetch_chart_data, sym, session): sym for sym in all_candidates}
         for f in as_completed(futures):
             result = f.result()
@@ -815,16 +849,26 @@ def run_pick_pipeline(force=False):
 
     steps.append(f"Chart data fetched: {len(chart_data)}/{len(all_candidates)} stocks")
 
-    # --- Phase B: Fetch fundamental data ---
-    fund_session = requests.Session()
-    fund_session.headers.update({"User-Agent": YAHOO_UA})
-    fund_data = fetch_fundamental_batch(list(chart_data.keys()), fund_session)
-    steps.append(f"Fundamental data fetched: {len(fund_data)} stocks")
-
-    # --- Phase C: Fetch TW institutional data ---
+    # --- Phase B: Fetch fundamental + institutional data in parallel ---
+    fund_data = {}
     inst_data = {}
+
+    def _fetch_fund():
+        fund_session = requests.Session()
+        fund_session.headers.update({"User-Agent": YAHOO_UA})
+        return fetch_fundamental_batch(list(chart_data.keys()), fund_session)
+
+    def _fetch_inst():
+        return fetch_twse_institutional() if tw_trading else {}
+
+    with ThreadPoolExecutor(max_workers=2) as phase_pool:
+        fund_future = phase_pool.submit(_fetch_fund)
+        inst_future = phase_pool.submit(_fetch_inst)
+        fund_data = fund_future.result()
+        inst_data = inst_future.result()
+
+    steps.append(f"Fundamental data fetched: {len(fund_data)} stocks")
     if tw_trading:
-        inst_data = fetch_twse_institutional()
         steps.append(f"Institutional data fetched: {len(inst_data)} stocks")
 
     # --- Phase D: Score all candidates ---
