@@ -901,7 +901,9 @@ def run_pick_pipeline(force=False):
         ch = chart_data.get(sym, {})
         fu = fund_data.get(sym, {})
         price = ch.get("price", 0)
-        prev = ch.get("prev_close", 0)
+        candles = ch.get("candles", [])
+        # Use second-to-last candle close as previous close (not chartPreviousClose which is range start)
+        prev = candles[-2]["close"] if len(candles) >= 2 else ch.get("prev_close", 0)
         change = round(price - prev, 2) if prev else 0
         pct = round((change / prev) * 100, 2) if prev else 0
 
