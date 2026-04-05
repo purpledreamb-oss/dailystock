@@ -523,6 +523,18 @@
       <table><thead><tr><th>代號</th><th>名稱</th><th>股價</th><th>漲跌</th><th>漲跌%</th><th>成交量</th></tr></thead>
       <tbody id="usStockTable"></tbody></table>
     </div>
+
+    <h3 class="sub-title">台股熱門 ETF</h3>
+    <div class="table-wrapper">
+      <table><thead><tr><th>代號</th><th>名稱</th><th>股價</th><th>漲跌</th><th>漲跌%</th><th>成交量</th></tr></thead>
+      <tbody id="twEtfTable"></tbody></table>
+    </div>
+
+    <h3 class="sub-title">美股熱門 ETF</h3>
+    <div class="table-wrapper">
+      <table><thead><tr><th>代號</th><th>名稱</th><th>股價</th><th>漲跌</th><th>漲跌%</th><th>成交量</th></tr></thead>
+      <tbody id="usEtfTable"></tbody></table>
+    </div>
   </div>
 
   <!-- ===== SECTION: 技術分析 ===== -->
@@ -647,6 +659,8 @@
    =========================================================== */
 const TW_STOCKS_DEFAULT = '2330,2317,2454,2412,2308,3711,2881,2882,2891,2303';
 const US_STOCKS_DEFAULT = 'AAPL,NVDA,TSLA,MSFT,GOOGL,AMZN,META,AMD,AVGO,TSM';
+const TW_ETF_DEFAULT = '0050,0056,00878,00919,00929,00940,006208,00713,00850,0051';
+const US_ETF_DEFAULT = 'SPY,QQQ,VOO,VTI,IWM,ARKK,SOXX,XLF,DIA,SCHD';
 const TW_STOCK_NAMES = {
   '2330':'台積電','2317':'鴻海','2454':'聯發科','2412':'中華電',
   '2308':'台達電','3711':'日月光投控','2881':'富邦金','2882':'國泰金',
@@ -656,6 +670,16 @@ const US_STOCK_NAMES = {
   'AAPL':'Apple','NVDA':'NVIDIA','TSLA':'Tesla','MSFT':'Microsoft',
   'GOOGL':'Alphabet','AMZN':'Amazon','META':'Meta','AMD':'AMD',
   'AVGO':'Broadcom','TSM':'台積電ADR'
+};
+const TW_ETF_NAMES = {
+  '0050':'元大台灣50','0056':'元大高股息','00878':'國泰永續高股息','00919':'群益台灣精選高息',
+  '00929':'復華台灣科技優息','00940':'元大台灣價值高息','006208':'富邦台50',
+  '00713':'元大台灣高息低波','00850':'元大臺灣ESG永續','0051':'元大中型100'
+};
+const US_ETF_NAMES = {
+  'SPY':'SPDR S&P 500','QQQ':'Invesco QQQ','VOO':'Vanguard S&P 500','VTI':'Vanguard Total Market',
+  'IWM':'iShares Russell 2000','ARKK':'ARK Innovation','SOXX':'iShares Semiconductor',
+  'XLF':'Financial Select','DIA':'SPDR Dow Jones','SCHD':'Schwab US Dividend'
 };
 
 const state = {
@@ -823,7 +847,8 @@ function goToFundamental(sym) {
    =========================================================== */
 async function loadMarketData() {
   const allSymbols = ['^TWII', '^DJI', '^GSPC', '^IXIC',
-    ...TW_STOCKS_DEFAULT.split(','), ...US_STOCKS_DEFAULT.split(',')];
+    ...TW_STOCKS_DEFAULT.split(','), ...US_STOCKS_DEFAULT.split(','),
+    ...TW_ETF_DEFAULT.split(','), ...US_ETF_DEFAULT.split(',')];
   const symbols = [...new Set(allSymbols)].join(',');
   try {
     const resp = await fetch('/api/quote?symbols=' + encodeURIComponent(symbols));
@@ -862,6 +887,8 @@ function renderMarketData(data) {
 
   renderStockTable('twStockTable', TW_STOCKS_DEFAULT.split(','), TW_STOCK_NAMES, data);
   renderStockTable('usStockTable', US_STOCKS_DEFAULT.split(','), US_STOCK_NAMES, data);
+  renderStockTable('twEtfTable', TW_ETF_DEFAULT.split(','), TW_ETF_NAMES, data);
+  renderStockTable('usEtfTable', US_ETF_DEFAULT.split(','), US_ETF_NAMES, data);
 }
 
 function renderStockTable(tableId, symbols, nameMap, data) {
