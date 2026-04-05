@@ -44,15 +44,69 @@ YAHOO_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 # Candidate stock pools
 # ---------------------------------------------------------------------------
 US_CANDIDATES = [
-    "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "AVGO", "JPM", "V",
-    "UNH", "MA", "HD", "COST", "PG", "JNJ", "ABBV", "CRM", "AMD", "NFLX",
-    "PEP", "KO", "MRK", "LLY", "ORCL", "CSCO", "ACN", "ADBE", "TXN", "QCOM",
+    # Mega-cap tech
+    "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "AVGO", "TSM", "ORCL",
+    # Semiconductors
+    "AMD", "QCOM", "TXN", "INTC", "MU", "MRVL", "KLAC", "LRCX", "AMAT", "ON",
+    # Software & Cloud
+    "CRM", "ADBE", "NOW", "INTU", "SNOW", "PANW", "CRWD", "PLTR", "DDOG", "ZS",
+    "WDAY", "TEAM", "HUBS", "MNDY", "NET", "FTNT", "MDB", "VEEV", "SPLK", "SNPS",
+    # Financials
+    "JPM", "V", "MA", "BAC", "WFC", "GS", "MS", "BLK", "SCHW", "AXP",
+    "C", "USB", "PNC", "TFC", "BK", "CME", "ICE", "SPGI", "MCO", "FIS",
+    # Healthcare & Pharma
+    "UNH", "JNJ", "LLY", "ABBV", "MRK", "PFE", "TMO", "ABT", "DHR", "BMY",
+    "AMGN", "GILD", "ISRG", "VRTX", "REGN", "MDT", "ZTS", "SYK", "BSX", "ELV",
+    # Consumer
+    "HD", "COST", "PG", "KO", "PEP", "WMT", "MCD", "NKE", "SBUX", "TGT",
+    "LOW", "TJX", "ROST", "DG", "DLTR", "CL", "KMB", "GIS", "SJM", "HSY",
+    # Media & Entertainment
+    "NFLX", "DIS", "CMCSA", "WBD", "PARA", "ROKU", "SPOT", "TTD", "RBLX", "EA",
+    # Industrials
+    "CAT", "DE", "GE", "HON", "UNP", "UPS", "RTX", "LMT", "BA", "GD",
+    "MMM", "EMR", "ITW", "ETN", "PH", "ROK", "WM", "RSG", "FAST", "CTAS",
+    # Energy
+    "XOM", "CVX", "COP", "SLB", "EOG", "MPC", "PSX", "VLO", "OXY", "HAL",
+    # Utilities & REITs
+    "NEE", "DUK", "SO", "D", "AEP", "AMT", "PLD", "CCI", "EQIX", "SPG",
+    # Communication
+    "TMUS", "VZ", "T", "CHTR",
+    # Materials
+    "LIN", "APD", "ECL", "NEM", "FCX", "NUE",
+    # Auto & EV
+    "GM", "F", "RIVN", "LCID", "LI", "NIO",
+    # AI & Emerging
+    "ARM", "SMCI", "AI", "PATH", "S", "IONQ", "RKLB", "BILL", "CFLT", "GTLB",
+    # Crypto & Fintech
+    "COIN", "SQ", "PYPL", "AFRM", "SOFI", "HOOD", "MARA", "RIOT",
+    # Biotech
+    "MRNA", "BIIB", "ALNY", "SGEN", "DXCM", "IDXX",
+    # China ADR
+    "BABA", "JD", "PDD", "BIDU",
+    # Aerospace & Defense
+    "NOC", "HII", "TDG", "HWM",
+    # Food & Beverage
+    "MDLZ", "KHC", "STZ", "BF.B",
+    # Insurance
+    "AIG", "MET", "PRU", "ALL",
+    # Transport & Logistics
+    "FDX", "CSX", "NSC", "DAL", "UAL", "LUV",
+    # Retail & E-commerce
+    "SHOP", "ETSY", "EBAY", "W", "CHWY", "BURL",
+    # Cybersecurity
+    "OKTA", "RPD",
 ]
 
 TW_CANDIDATES = [
+    # 權值股
     "2330", "2317", "2454", "2412", "2308", "3711", "2881", "2882", "2891", "2303",
-    "2886", "2884", "3008", "2357", "2382", "6505", "1301", "1303", "2002", "1216",
-    "5871", "2207", "3034", "2327", "4904", "2395", "3037", "6669", "2379", "3231",
+    # 金融股
+    "2886", "2884", "2885", "2887", "2880", "2883", "2890", "5880", "2892", "5871",
+    # 電子股
+    "3008", "2357", "2382", "2327", "3034", "2395", "3037", "6669", "2379", "3231",
+    "2345", "3443", "2301", "6415", "3529", "2376", "4966", "2408", "3706", "6488",
+    # 傳產龍頭
+    "6505", "1301", "1303", "2002", "1216", "2207", "4904", "1101", "1102", "9910",
 ]
 
 # ---------------------------------------------------------------------------
@@ -257,7 +311,7 @@ def fetch_fundamental_batch(symbols, session):
         except Exception:
             return sym, None
 
-    with ThreadPoolExecutor(max_workers=10) as pool:
+    with ThreadPoolExecutor(max_workers=20) as pool:
         futures = {pool.submit(fetch_one, s): s for s in symbols}
         for f in as_completed(futures):
             sym, data = f.result()
@@ -745,12 +799,14 @@ def run_pick_pipeline(force=False):
         all_candidates.extend(US_CANDIDATES)
     if tw_trading:
         all_candidates.extend(TW_CANDIDATES)
+    # Deduplicate while preserving order
+    all_candidates = list(dict.fromkeys(all_candidates))
 
     chart_data = {}
     session = requests.Session()
     session.headers.update({"User-Agent": YAHOO_UA})
 
-    with ThreadPoolExecutor(max_workers=10) as pool:
+    with ThreadPoolExecutor(max_workers=20) as pool:
         futures = {pool.submit(fetch_chart_data, sym, session): sym for sym in all_candidates}
         for f in as_completed(futures):
             result = f.result()
