@@ -695,7 +695,7 @@ def generate_recommendation(symbol, name, price, change, pct, score, breakdown, 
                 "content-type": "application/json",
             },
             json={
-                "model": "claude-sonnet-4-6-20250514",
+                "model": "claude-sonnet-4-20250514",
                 "max_tokens": 500,
                 "tools": [{"type": "web_search_20250305", "name": "web_search", "max_uses": 2}],
                 "messages": [{"role": "user", "content": prompt}],
