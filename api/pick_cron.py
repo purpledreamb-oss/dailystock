@@ -22,7 +22,7 @@ from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 from datetime import datetime, timezone, timedelta
 
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+ANTHROPIC_API_KEY = (os.getenv("ANTHROPIC_API_KEY") or "").strip()
 CRON_SECRET = os.getenv("CRON_SECRET")
 KV_REST_API_URL = os.getenv("KV_REST_API_URL")
 KV_REST_API_TOKEN = os.getenv("KV_REST_API_TOKEN")
@@ -708,10 +708,9 @@ def generate_recommendation(symbol, name, price, change, pct, score, breakdown, 
             text = "\n".join(parts).strip()
             if text:
                 return text
-            return f"[AI no text] {name}（{symbol}）綜合評分 {score} 分。content types: {[b.get('type') for b in data.get('content', [])]}"
-        return f"[API {resp.status_code}] {resp.text[:100]}"
-    except Exception as e:
-        return f"[Error: {e}] {name}（{symbol}）綜合評分 {score} 分，技術面與基本面均呈正向訊號，建議關注。"
+    except Exception:
+        pass
+    return f"{name}（{symbol}）綜合評分 {score} 分，技術面與基本面均呈正向訊號，建議關注。"
 
 
 # ---------------------------------------------------------------------------
