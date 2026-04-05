@@ -598,7 +598,7 @@
         <div class="fundamental-card"><div class="f-label">EPS</div><div class="f-value" id="fEPS">--</div></div>
         <div class="fundamental-card"><div class="f-label">ROE</div><div class="f-value" id="fROE">--</div></div>
       </div>
-      <h3 class="sub-title">月營收趨勢</h3>
+      <h3 class="sub-title">季度營收趨勢</h3>
       <div class="chart-container"><div id="revenueChartEl" style="height:250px;"></div></div>
       <h3 class="sub-title">近 10 日法人買賣超</h3>
       <div class="table-wrapper">
@@ -1165,11 +1165,12 @@ async function loadFundamental(symbol) {
       revEl.innerHTML = '<div style="display:flex;align-items:flex-end;gap:6px;height:220px;padding:10px 0;">' +
         revs.map(r => {
           const pct = maxVal > 0 ? (r.value / maxVal * 100) : 0;
-          const valStr = (r.value / 100000000).toFixed(1) + '億';
+          const valStr = r.value >= 1e8 ? (r.value / 1e8).toFixed(1) + '億' : r.value >= 1e4 ? (r.value / 1e4).toFixed(0) + '萬' : r.value.toLocaleString();
+          const label = r.month.includes('Q') ? r.month : r.month.slice(5) + '月';
           return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">' +
             '<div style="font-size:0.72rem;color:var(--text-light)">' + valStr + '</div>' +
             '<div style="width:100%;max-width:48px;height:' + pct + '%;min-height:4px;background:var(--soft-orange);border-radius:4px 4px 0 0;"></div>' +
-            '<div style="font-size:0.68rem;color:var(--text-light)">' + r.month.slice(5) + '月</div></div>';
+            '<div style="font-size:0.68rem;color:var(--text-light)">' + label + '</div></div>';
         }).join('') + '</div>';
     } else if (revEl) {
       revEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-light)">暫無營收資料</div>';

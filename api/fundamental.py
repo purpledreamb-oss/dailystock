@@ -231,7 +231,7 @@ def build_fundamental_data(symbol):
         if crumb:
             url = (
                 f"https://query2.finance.yahoo.com/v10/finance/quoteSummary/{yahoo_symbol}"
-                f"?modules=defaultKeyStatistics,summaryDetail,price&crumb={crumb}"
+                f"?modules=defaultKeyStatistics,summaryDetail,price,incomeStatementHistoryQuarterly&crumb={crumb}"
             )
             resp = session.get(url, timeout=15)
             if resp.status_code == 200:
@@ -267,16 +267,31 @@ def build_fundamental_data(symbol):
                             or price_mod.get("longName")
                             or symbol
                         )
+
+                    # Quarterly revenue from income statement
+                    inc_q = modules.get("incomeStatementHistoryQuarterly", {})
+                    stmts = inc_q.get("incomeStatementHistory", [])
+                    rev_list = []
+                    for stmt in stmts:
+                        end_date = stmt.get("endDate", {}).get("fmt", "")
+                        total_rev = stmt.get("totalRevenue", {})
+                        rev_raw = total_rev.get("raw") if isinstance(total_rev, dict) else None
+                        if end_date and rev_raw:
+                            # Convert "2025-12-31" to "2025-Q4" format
+                            parts = end_date.split("-")
+                            if len(parts) >= 2:
+                                month = int(parts[1])
+                                quarter = (month - 1) // 3 + 1
+                                label = f"{parts[0]}-Q{quarter}"
+                                rev_list.append({"month": label, "value": rev_raw})
+                    if rev_list:
+                        result["revenue"] = rev_list
+
     except Exception:
         pass
 
     # 3. Taiwan-specific data
     if market == "TW":
-        # Monthly revenue from TWSE
-        try:
-            result["revenue"] = fetch_twse_revenue(symbol)
-        except Exception:
-            pass
 
         # Institutional trading from TWSE
         try:
