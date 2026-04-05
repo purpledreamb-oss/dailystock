@@ -8,10 +8,11 @@
     { "src": "index.html", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/api/pick", "dest": "/api/pick.py" },
     { "src": "/api/pick_cron", "dest": "/api/pick_cron.py" },
+    { "src": "/api/pick", "dest": "/api/pick.py" },
     { "src": "/api/quote", "dest": "/api/quote.py" },
     { "src": "/api/chart", "dest": "/api/chart.py" },
-    { "src": "/api/fundamental", "dest": "/api/fundamental.py" }
+    { "src": "/api/fundamental", "dest": "/api/fundamental.py" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
