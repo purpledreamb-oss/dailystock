@@ -700,7 +700,7 @@ def generate_recommendation(symbol, name, price, change, pct, score, breakdown, 
                 "tools": [{"type": "web_search_20250305", "name": "web_search", "max_uses": 2}],
                 "messages": [{"role": "user", "content": prompt}],
             },
-            timeout=30,
+            timeout=25,
         )
         if resp.status_code == 200:
             data = resp.json()
@@ -708,12 +708,10 @@ def generate_recommendation(symbol, name, price, change, pct, score, breakdown, 
             text = "\n".join(parts).strip()
             if text:
                 return text
-        else:
-            # Log error for debugging
-            print(f"Anthropic API error {resp.status_code}: {resp.text[:200]}")
+            return f"[AI no text] {name}（{symbol}）綜合評分 {score} 分。content types: {[b.get('type') for b in data.get('content', [])]}"
+        return f"[API {resp.status_code}] {resp.text[:100]}"
     except Exception as e:
-        print(f"Anthropic API exception: {e}")
-    return f"{name}（{symbol}）綜合評分 {score} 分，技術面與基本面均呈正向訊號，建議關注。"
+        return f"[Error: {e}] {name}（{symbol}）綜合評分 {score} 分，技術面與基本面均呈正向訊號，建議關注。"
 
 
 # ---------------------------------------------------------------------------
