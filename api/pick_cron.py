@@ -705,7 +705,10 @@ def generate_recommendation(symbol, name, price, change, pct, score, breakdown, 
         if resp.status_code == 200:
             data = resp.json()
             parts = [b["text"] for b in data.get("content", []) if b.get("type") == "text"]
-            text = "\n".join(parts).strip()
+            text = " ".join(parts).strip()
+            # Clean up stray newlines from web search citations
+            text = re.sub(r'\n+', '', text)
+            text = re.sub(r'\s{2,}', ' ', text)
             if text:
                 return text
     except Exception:
