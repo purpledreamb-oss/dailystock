@@ -512,6 +512,19 @@
       </div>
     </div>
 
+    <h3 class="sub-title">我的自選股
+      <span style="font-size:0.8rem;font-weight:normal;color:var(--text-light);margin-left:0.5rem;">(儲存在瀏覽器)</span>
+    </h3>
+    <div class="search-bar" style="margin-bottom:1rem;">
+      <input type="text" id="watchlistInput" placeholder="輸入股票代號加入自選 (例: 2330, AAPL)..." />
+      <button class="btn btn-primary" onclick="addWatchlist()">加入</button>
+    </div>
+    <div class="table-wrapper" id="watchlistWrapper" style="display:none;">
+      <table><thead><tr><th>代號</th><th>名稱</th><th>股價</th><th>漲跌</th><th>漲跌%</th><th>成交量</th><th></th></tr></thead>
+      <tbody id="watchlistTable"></tbody></table>
+    </div>
+    <div id="watchlistEmpty" class="placeholder-msg" style="margin-bottom:1.5rem;">尚未加入自選股</div>
+
     <h3 class="sub-title">台股熱門個股</h3>
     <div class="table-wrapper">
       <table><thead><tr><th>代號</th><th>名稱</th><th>股價</th><th>漲跌</th><th>漲跌%</th><th>成交量</th></tr></thead>
@@ -857,12 +870,70 @@ function goToFundamental(sym) {
 }
 
 /* ===========================================================
+   Watchlist (localStorage)
+   =========================================================== */
+function getWatchlist() {
+  try { return JSON.parse(localStorage.getItem('dailystock_watchlist') || '[]'); } catch(e) { return []; }
+}
+function saveWatchlist(list) {
+  localStorage.setItem('dailystock_watchlist', JSON.stringify(list));
+}
+function addWatchlist() {
+  const input = document.getElementById('watchlistInput');
+  const sym = (input.value || '').trim().toUpperCase();
+  if (!sym) return;
+  const list = getWatchlist();
+  if (!list.includes(sym)) {
+    list.push(sym);
+    saveWatchlist(list);
+  }
+  input.value = '';
+  loadMarketData();
+}
+function removeWatchlist(sym) {
+  const list = getWatchlist().filter(s => s !== sym);
+  saveWatchlist(list);
+  renderWatchlist(state.marketData);
+}
+function renderWatchlist(data) {
+  const list = getWatchlist();
+  const wrapper = document.getElementById('watchlistWrapper');
+  const empty = document.getElementById('watchlistEmpty');
+  if (!list.length) {
+    if (wrapper) wrapper.style.display = 'none';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (wrapper) wrapper.style.display = 'block';
+  if (empty) empty.style.display = 'none';
+  const tbody = document.getElementById('watchlistTable');
+  if (!tbody) return;
+  let html = '';
+  list.forEach(sym => {
+    const d = data[sym] || {};
+    const price = d.price || 0, chg = d.change || 0, chgP = d.pct || 0, vol = d.volume || 0;
+    const name = d.name || sym;
+    const cls = changeClass(chg);
+    html += '<tr class="stock-row" onclick="goToChart(\'' + sym + '\')">' +
+      '<td class="symbol-cell">' + sym + '</td><td>' + name + '</td>' +
+      '<td class="price-cell">' + formatNumber(price, 2) + '</td>' +
+      '<td class="' + cls + '">' + changePrefix(chg) + formatNumber(Math.abs(chg), 2) + '</td>' +
+      '<td class="' + cls + '">' + (chg >= 0 ? '+' : '') + formatNumber(chgP, 2) + '%</td>' +
+      '<td>' + formatVolume(vol) + '</td>' +
+      '<td><button onclick="event.stopPropagation(); removeWatchlist(\'' + sym + '\')" style="background:none;border:none;color:#C0392B;cursor:pointer;font-size:1.1rem;" title="移除">✕</button></td></tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+/* ===========================================================
    Market Data
    =========================================================== */
 async function loadMarketData() {
+  const watchlist = getWatchlist();
   const allSymbols = ['^TWII', '^DJI', '^GSPC', '^IXIC',
     ...TW_STOCKS_DEFAULT.split(','), ...US_STOCKS_DEFAULT.split(','),
-    ...TW_ETF_DEFAULT.split(','), ...US_ETF_DEFAULT.split(',')];
+    ...TW_ETF_DEFAULT.split(','), ...US_ETF_DEFAULT.split(','),
+    ...watchlist];
   const symbols = [...new Set(allSymbols)].join(',');
   try {
     const resp = await fetch('/api/quote?symbols=' + encodeURIComponent(symbols));
@@ -899,6 +970,7 @@ function renderMarketData(data) {
     setHtml(idx.cId, '<span class="' + changeClass(c) + '">' + changePrefix(c) + formatNumber(c, 2) + ' (' + formatNumber(p, 2) + '%)</span>');
   });
 
+  renderWatchlist(data);
   renderStockTable('twStockTable', TW_STOCKS_DEFAULT.split(','), TW_STOCK_NAMES, data);
   renderStockTable('usStockTable', US_STOCKS_DEFAULT.split(','), US_STOCK_NAMES, data);
   renderStockTable('twEtfTable', TW_ETF_DEFAULT.split(','), TW_ETF_NAMES, data);
@@ -1246,6 +1318,7 @@ function buildHistoryCard(label, pick) {
    =========================================================== */
 document.getElementById('chartSymbolInput').addEventListener('keydown', e => { if (e.key === 'Enter') searchChart(); });
 document.getElementById('fundamentalInput').addEventListener('keydown', e => { if (e.key === 'Enter') searchFundamental(); });
+document.getElementById('watchlistInput').addEventListener('keydown', e => { if (e.key === 'Enter') addWatchlist(); });
 
 /* ===========================================================
    Init
