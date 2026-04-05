@@ -1,0 +1,18 @@
+name: Daily Stock Pick
+on:
+  schedule:
+    - cron: '30 21 * * 1-5'  # UTC 21:30 = Taiwan 05:30 (after US market close)
+  workflow_dispatch:
+
+jobs:
+  pick:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger daily stock pick
+        run: |
+          curl -s -X GET "${{ secrets.PICK_CRON_URL }}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            --max-time 65
+        env:
+          PICK_CRON_URL: ${{ secrets.PICK_CRON_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}

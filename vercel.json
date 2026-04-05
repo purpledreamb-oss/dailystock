@@ -1,0 +1,16 @@
+{
+  "functions": {
+    "api/pick.py": { "maxDuration": 10 },
+    "api/pick_cron.py": { "maxDuration": 60 },
+    "api/quote.py": { "maxDuration": 15 },
+    "api/chart.py": { "maxDuration": 15 },
+    "api/fundamental.py": { "maxDuration": 15 }
+  },
+  "rewrites": [
+    { "source": "/api/pick", "destination": "/api/pick" },
+    { "source": "/api/pick_cron", "destination": "/api/pick_cron" },
+    { "source": "/api/quote", "destination": "/api/quote" },
+    { "source": "/api/chart", "destination": "/api/chart" },
+    { "source": "/api/fundamental", "destination": "/api/fundamental" }
+  ]
+}
