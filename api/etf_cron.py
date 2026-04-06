@@ -44,54 +44,108 @@ YAHOO_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 # ETF Candidate Pools
 # ---------------------------------------------------------------------------
 US_ETF_CANDIDATES = [
-    # Broad market
-    "SPY", "QQQ", "VOO", "VTI", "IWM", "DIA",
-    # Sector / thematic
-    "SOXX", "XLF", "XLE", "XLK", "XLV", "ARKK",
-    # Bonds
-    "TLT", "BND", "HYG",
-    # Dividend
-    "SCHD", "VYM", "DVY",
-    # International
-    "EEM", "VEA",
+    # Broad market index (8)
+    "SPY", "QQQ", "VOO", "VTI", "IWM", "DIA", "RSP", "MDY",
+    # Sector SPDR (11)
+    "XLF", "XLE", "XLK", "XLV", "XLI", "XLC", "XLB", "XLU", "XLRE", "XLP", "XLY",
+    # Thematic / Innovation (10)
+    "SOXX", "ARKK", "BOTZ", "LIT", "TAN", "ICLN", "HACK", "AIQ", "KWEB", "IBIT",
+    # Fixed income / Bonds (8)
+    "TLT", "BND", "HYG", "AGG", "LQD", "SHY", "TIP", "VCIT",
+    # Dividend / Value (8)
+    "SCHD", "VYM", "DVY", "HDV", "DGRO", "NOBL", "VIG", "DIVB",
+    # Growth (4)
+    "VUG", "VONG", "MGK", "QQQM",
+    # International (8)
+    "EEM", "VEA", "VWO", "INDA", "FXI", "EWJ", "EWZ", "IEFA",
+    # Commodity (4)
+    "GLD", "SLV", "USO", "DBC",
+    # Real estate (1)
+    "VNQ",
+    # Volatility / Alternatives (2)
+    "JEPI", "JEPQ",
 ]
 
 TW_ETF_CANDIDATES = [
-    # Market-cap weighted
-    "0050", "006208", "0051",
-    # High dividend
+    # 市值型 (5)
+    "0050", "006208", "0051", "006205", "00692",
+    # 高股息 (12)
     "0056", "00878", "00919", "00929", "00940", "00713", "00850",
-    # Tech
-    "00891", "00892",
-    # Bond
+    "00907", "00915", "00918", "00934", "00936",
+    # 科技 / 半導體 (4)
+    "00891", "00892", "00895", "00881",
+    # 債券 (8)
     "00937B", "00679B", "00751B", "00772B",
-    # ESG / Thematic
-    "00888", "00900", "00896", "00733",
+    "00720B", "00773B", "00746B", "00933B",
+    # ESG / 主題 (6)
+    "00888", "00900", "00896", "00733", "00830", "00901",
+    # 海外市場 (5)
+    "00646", "00662", "00757", "00852", "00893",
 ]
 
 # ---------------------------------------------------------------------------
 # Chinese name mapping
 # ---------------------------------------------------------------------------
 US_ETF_NAMES = {
+    # Broad market
     "SPY": "SPDR S&P 500", "QQQ": "Invesco QQQ", "VOO": "Vanguard S&P 500",
     "VTI": "Vanguard全市場", "IWM": "iShares羅素2000", "DIA": "SPDR道瓊",
-    "SOXX": "iShares半導體", "XLF": "SPDR金融", "XLE": "SPDR能源",
-    "XLK": "SPDR科技", "XLV": "SPDR醫療", "ARKK": "ARK創新",
+    "RSP": "Invesco等權重S&P", "MDY": "SPDR中型股",
+    # Sector
+    "XLF": "SPDR金融", "XLE": "SPDR能源", "XLK": "SPDR科技", "XLV": "SPDR醫療",
+    "XLI": "SPDR工業", "XLC": "SPDR通訊", "XLB": "SPDR原物料", "XLU": "SPDR公用事業",
+    "XLRE": "SPDR不動產", "XLP": "SPDR必需消費", "XLY": "SPDR非必需消費",
+    # Thematic
+    "SOXX": "iShares半導體", "ARKK": "ARK創新", "BOTZ": "全球機器人與AI",
+    "LIT": "全球鋰電池", "TAN": "Invesco太陽能", "ICLN": "iShares潔淨能源",
+    "HACK": "全球網路安全", "AIQ": "全球AI科技", "KWEB": "中國科技", "IBIT": "iShares比特幣",
+    # Bonds
     "TLT": "iShares長期美債", "BND": "Vanguard總債券", "HYG": "iShares高收益債",
+    "AGG": "iShares總債券", "LQD": "iShares投資級債", "SHY": "iShares短期美債",
+    "TIP": "iShares抗通膨債", "VCIT": "Vanguard中期公司債",
+    # Dividend
     "SCHD": "Schwab高股息", "VYM": "Vanguard高股息", "DVY": "iShares精選股息",
-    "EEM": "iShares新興市場", "VEA": "Vanguard已開發",
+    "HDV": "iShares核心高股息", "DGRO": "iShares股息成長", "NOBL": "ProShares股息貴族",
+    "VIG": "Vanguard股息增長", "DIVB": "iShares美國股息",
+    # Growth
+    "VUG": "Vanguard成長", "VONG": "Vanguard羅素成長", "MGK": "Vanguard超大型成長",
+    "QQQM": "Invesco QQQ迷你",
+    # International
+    "EEM": "iShares新興市場", "VEA": "Vanguard已開發", "VWO": "Vanguard新興市場",
+    "INDA": "iShares印度", "FXI": "iShares中國大型", "EWJ": "iShares日本",
+    "EWZ": "iShares巴西", "IEFA": "iShares核心EAFE",
+    # Commodity
+    "GLD": "SPDR黃金", "SLV": "iShares白銀", "USO": "美國原油", "DBC": "Invesco商品指數",
+    # Real estate
+    "VNQ": "Vanguard不動產",
+    # Alternatives
+    "JEPI": "JPMorgan優質收益", "JEPQ": "JPMorgan納斯達克收益",
 }
 
 TW_ETF_NAMES = {
+    # 市值型
     "0050": "元大台灣50", "006208": "富邦台50", "0051": "元大中型100",
+    "006205": "富邦上証", "00692": "富邦公司治理",
+    # 高股息
     "0056": "元大高股息", "00878": "國泰永續高股息", "00919": "群益台灣精選高息",
     "00929": "復華台灣科技優息", "00940": "元大台灣價值高息", "00713": "元大高息低波",
-    "00850": "元大臺灣ESG永續",
+    "00850": "元大臺灣ESG永續", "00907": "永豐優息存股", "00915": "凱基優選高股息30",
+    "00918": "大華優利高填息30", "00934": "中信成長高股息", "00936": "台新永續高息中小",
+    # 科技
     "00891": "中信關鍵半導體", "00892": "富邦台灣半導體",
+    "00895": "富邦未來車", "00881": "國泰台灣5G+",
+    # 債券
     "00937B": "群益ESG投等債20+", "00679B": "元大美債20年",
     "00751B": "元大AAA至A公司債", "00772B": "中信高評級公司債",
+    "00720B": "元大投資級公司債", "00773B": "中信優先金融債",
+    "00746B": "富邦A級公司債", "00933B": "國泰10Y+金融債",
+    # ESG / 主題
     "00888": "永豐台灣ESG", "00900": "富邦特選高股息30",
     "00896": "中信綠能及電動車", "00733": "富邦臺灣中小",
+    "00830": "國泰費城半導體", "00901": "永豐智能車供應鏈",
+    # 海外市場
+    "00646": "元大S&P500", "00662": "富邦NASDAQ",
+    "00757": "統一FANG+", "00852": "國泰美國道瓊", "00893": "國泰智能電動車",
 }
 
 # ---------------------------------------------------------------------------
