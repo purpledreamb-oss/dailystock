@@ -17,3 +17,12 @@ jobs:
           PICK_CRON_URL: ${{ secrets.PICK_CRON_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
 
+      - name: Trigger daily ETF pick
+        run: |
+          curl -s -X GET "${{ secrets.ETF_CRON_URL }}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            --max-time 65
+        env:
+          ETF_CRON_URL: ${{ secrets.ETF_CRON_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+

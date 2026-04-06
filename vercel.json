@@ -7,6 +7,8 @@
     { "src": "api/fundamental.py", "use": "@vercel/python", "config": { "maxDuration": 15 } },
     { "src": "api/performance.py", "use": "@vercel/python", "config": { "maxDuration": 15 } },
     { "src": "api/vote.py", "use": "@vercel/python", "config": { "maxDuration": 10 } },
+    { "src": "api/etf_cron.py", "use": "@vercel/python", "config": { "maxDuration": 60 } },
+    { "src": "api/etf_pick.py", "use": "@vercel/python", "config": { "maxDuration": 10 } },
     { "src": "index.html", "use": "@vercel/static" }
   ],
   "routes": [
@@ -17,6 +19,8 @@
     { "src": "/api/fundamental", "dest": "/api/fundamental.py" },
     { "src": "/api/performance", "dest": "/api/performance.py" },
     { "src": "/api/vote", "dest": "/api/vote.py" },
+    { "src": "/api/etf_cron", "dest": "/api/etf_cron.py" },
+    { "src": "/api/etf_pick", "dest": "/api/etf_pick.py" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

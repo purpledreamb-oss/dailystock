@@ -478,6 +478,7 @@
     </div>
     <ul class="nav-links">
       <li><a href="#pick" data-section="pick">今日精選</a></li>
+      <li><a href="#etf" data-section="etf">精選ETF</a></li>
       <li><a href="#market" data-section="market">行情</a></li>
       <li><a href="#analysis" data-section="analysis">分析</a></li>
       <li><a href="#history" data-section="history">歷史</a></li>
@@ -589,6 +590,105 @@
         <p><strong>法人面</strong>（台股）：外資淨買賣超、投信/自營商動向</p>
         <p><strong>風險面</strong>：ATR 波動率、52 週高低區間位置、成交量活躍度</p>
         <p style="margin-top:0.8rem;font-size:0.8rem;color:var(--text-light)">系統每日從美股 500 檔、台股 100 檔候選股中，自動計算綜合評分並選出最高分個股推薦。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SECTION: 精選 ETF ===== -->
+  <div class="section" id="sec-etf">
+    <h2 class="section-title">精選 ETF</h2>
+    <div class="pick-date" id="etfPickDate">載入中...</div>
+
+    <div id="etfContent">
+      <div class="pick-grid">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+      </div>
+    </div>
+
+    <div id="etfCards" style="display:none;">
+      <div class="pick-grid">
+        <!-- US ETF Card -->
+        <div class="pick-card" id="usEtfCard">
+          <div class="pick-card-header">
+            <span class="pick-flag">&#x1F1FA;&#x1F1F8;</span>
+            <span class="pick-market-label">美股 ETF 精選</span>
+          </div>
+          <div class="pick-symbol" id="usEtfSymbol">--</div>
+          <div class="pick-name" id="usEtfName">--</div>
+          <div>
+            <span class="pick-price" id="usEtfPrice">--</span>
+            <span class="pick-change" id="usEtfChange">--</span>
+            <span class="sparkline-container"><canvas id="usEtfSparkline" width="80" height="30"></canvas></span>
+          </div>
+          <div class="pick-score-section">
+            <div class="pick-score-header">
+              <div class="score-badge" id="usEtfScoreBadge">--</div>
+              <div><div style="font-weight:500">綜合評分</div><div class="score-label">滿分 100</div></div>
+            </div>
+            <div class="radar-container"><canvas id="usEtfRadar" width="200" height="200"></canvas></div>
+            <div class="score-bar" id="usEtfScoreBar"></div>
+            <div class="score-legend" id="usEtfScoreLegend"></div>
+          </div>
+          <div class="pick-reason">
+            <div class="pick-reason-title">推薦原因</div>
+            <div id="usEtfReason">--</div>
+          </div>
+          <div class="pick-actions">
+            <a href="#" id="usEtfChartLink" onclick="goToChart(this.dataset.sym); return false;">查看圖表</a>
+          </div>
+          <div class="pick-vote" id="usEtfVote"></div>
+          <div class="pick-share" id="usEtfShare"></div>
+        </div>
+
+        <!-- TW ETF Card -->
+        <div class="pick-card" id="twEtfCard">
+          <div class="pick-card-header">
+            <span class="pick-flag">&#x1F1F9;&#x1F1FC;</span>
+            <span class="pick-market-label">台股 ETF 精選</span>
+          </div>
+          <div class="pick-symbol" id="twEtfSymbol">--</div>
+          <div class="pick-name" id="twEtfName">--</div>
+          <div>
+            <span class="pick-price" id="twEtfPrice">--</span>
+            <span class="pick-change" id="twEtfChange">--</span>
+            <span class="sparkline-container"><canvas id="twEtfSparkline" width="80" height="30"></canvas></span>
+          </div>
+          <div class="pick-score-section">
+            <div class="pick-score-header">
+              <div class="score-badge" id="twEtfScoreBadge">--</div>
+              <div><div style="font-weight:500">綜合評分</div><div class="score-label">滿分 100</div></div>
+            </div>
+            <div class="radar-container"><canvas id="twEtfRadar" width="200" height="200"></canvas></div>
+            <div class="score-bar" id="twEtfScoreBar"></div>
+            <div class="score-legend" id="twEtfScoreLegend"></div>
+          </div>
+          <div class="pick-reason">
+            <div class="pick-reason-title">推薦原因</div>
+            <div id="twEtfReason">--</div>
+          </div>
+          <div class="pick-actions">
+            <a href="#" id="twEtfChartLink" onclick="goToChart(this.dataset.sym); return false;">查看圖表</a>
+          </div>
+          <div class="pick-vote" id="twEtfVote"></div>
+          <div class="pick-share" id="twEtfShare"></div>
+        </div>
+      </div>
+
+      <div class="disclaimer">
+        以上分析由 AI 自動生成，僅供參考，不構成任何投資建議。投資有風險，決策前請審慎評估。
+      </div>
+
+      <div class="method-toggle" onclick="document.getElementById('etfMethodContent').classList.toggle('open')">
+        ETF 評分方法說明 ▼
+      </div>
+      <div class="method-content" id="etfMethodContent">
+        <p><strong>動能</strong>：近 1 月 / 3 月報酬率、RSI 動能指標</p>
+        <p><strong>風險</strong>：ATR 波動率、最大回撤、52 週位置</p>
+        <p><strong>規模</strong>：AUM 資產規模、日均成交量（流動性）</p>
+        <p><strong>收益</strong>：殖利率、費用率（越低越好）</p>
+        <p><strong>趨勢</strong>：股價 vs MA50 / MA200 均線趨勢</p>
+        <p style="margin-top:0.8rem;font-size:0.8rem;color:var(--text-light)">系統每日從美股 20 檔、台股 20 檔 ETF 中，自動計算綜合評分並選出最高分 ETF 推薦。</p>
       </div>
     </div>
   </div>
@@ -887,7 +987,7 @@ function navigate(hash) {
   const section = (hash || '#pick').replace('#', '');
   // Backward compat: old #chart and #fundamental hashes map to #analysis
   const aliasMap = { chart: 'analysis', fundamental: 'analysis' };
-  const valid = ['pick', 'market', 'analysis', 'history'];
+  const valid = ['pick', 'etf', 'market', 'analysis', 'history'];
   const mapped = aliasMap[section] || section;
   const target = valid.includes(mapped) ? mapped : 'pick';
 
@@ -1705,8 +1805,8 @@ function drawRadar(canvasId, breakdown, maxScores) {
   const angleStep = (2 * Math.PI) / n;
   const startAngle = -Math.PI / 2;
 
-  const labelNames = { technical: '技術', fundamental: '基本', institutional: '法人', risk: '風險' };
-  const colors = { technical: '#3498DB', fundamental: '#27AE60', institutional: '#9B59B6', risk: '#E67E22' };
+  const labelNames = { technical: '技術', fundamental: '基本', institutional: '法人', risk: '風險', momentum: '動能', size: '規模', 'yield': '收益', trend: '趨勢' };
+  const colors = { technical: '#3498DB', fundamental: '#27AE60', institutional: '#9B59B6', risk: '#E67E22', momentum: '#3498DB', size: '#9B59B6', 'yield': '#27AE60', trend: '#1ABC9C' };
 
   // Grid circles
   ctx.strokeStyle = 'rgba(200,160,100,0.2)';
@@ -1903,6 +2003,115 @@ function updateStreak() {
 updateStreak();
 
 /* ===========================================================
+   ETF Pick
+   =========================================================== */
+async function loadETFPick() {
+  try {
+    const resp = await fetch('/api/etf_pick');
+    if (!resp.ok) throw new Error('No ETF pick data');
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+    renderETFPick(data);
+  } catch (err) {
+    setTextContent('etfPickDate', new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'long' }));
+    document.getElementById('etfContent').innerHTML =
+      '<div class="error-container" style="padding:3rem;">精選 ETF 尚未產生，請稍後再來<br><small style="color:var(--text-light);display:block;margin:0.5rem 0">推薦在每個交易日凌晨自動生成</small><button class="retry-btn" onclick="loadETFPick()">重新載入</button></div>';
+  }
+}
+
+function renderETFPick(data) {
+  document.getElementById('etfContent').style.display = 'none';
+  document.getElementById('etfCards').style.display = 'block';
+
+  const weekday = new Date(data.date + 'T00:00:00+08:00').toLocaleDateString('zh-TW', { weekday: 'long' });
+  setTextContent('etfPickDate', data.date + ' ' + weekday);
+
+  if (data.us) { renderETFCard('usEtf', data.us); renderShare('usEtf', data.us); renderETFVote('usEtf', 'us_etf', data.date); }
+  else document.getElementById('usEtfCard').style.display = 'none';
+
+  if (data.tw) { renderETFCard('twEtf', data.tw); renderShare('twEtf', data.tw); renderETFVote('twEtf', 'tw_etf', data.date); }
+  else document.getElementById('twEtfCard').style.display = 'none';
+}
+
+function renderETFCard(prefix, pick) {
+  const symText = pick.name_zh ? pick.symbol + ' ' + pick.name_zh : pick.symbol;
+  setTextContent(prefix + 'Symbol', symText);
+  setTextContent(prefix + 'Name', pick.name);
+  setTextContent(prefix + 'Price', formatNumber(pick.price, 2));
+
+  const chgEl = document.getElementById(prefix + 'Change');
+  if (chgEl) {
+    const cls = pick.change >= 0 ? 'up' : 'down';
+    chgEl.className = 'pick-change ' + cls;
+    chgEl.textContent = changePrefix(pick.change) + formatNumber(Math.abs(pick.change), 2) + ' (' + formatNumber(pick.pct, 2) + '%)';
+  }
+
+  // Score badge
+  const badge = document.getElementById(prefix + 'ScoreBadge');
+  if (badge) {
+    badge.textContent = pick.score;
+    badge.className = 'score-badge ' + (pick.score >= 75 ? 'high' : pick.score >= 60 ? 'medium' : 'low');
+  }
+
+  // Score bar — ETF dimensions
+  const bd = pick.breakdown || {};
+  const total = pick.score || 1;
+  const barEl = document.getElementById(prefix + 'ScoreBar');
+  if (barEl) {
+    let html = '';
+    const barColors = { momentum: '#3498DB', risk: '#E67E22', size: '#9B59B6', 'yield': '#27AE60', trend: '#1ABC9C' };
+    Object.keys(bd).forEach(key => {
+      const color = barColors[key] || '#888';
+      html += '<div style="width:' + (bd[key] / total * 100) + '%;background:' + color + ';height:100%;border-radius:4px;"></div>';
+    });
+    barEl.innerHTML = html;
+  }
+
+  // Legend
+  const legEl = document.getElementById(prefix + 'ScoreLegend');
+  if (legEl) {
+    const legNames = { momentum: '動能', risk: '風險', size: '規模', 'yield': '收益', trend: '趨勢' };
+    const legColors = { momentum: '#3498DB', risk: '#E67E22', size: '#9B59B6', 'yield': '#27AE60', trend: '#1ABC9C' };
+    let html = '';
+    Object.keys(bd).forEach(key => {
+      html += '<span style="color:' + (legColors[key] || '#888') + '">' + (legNames[key] || key) + ' ' + bd[key] + '</span> ';
+    });
+    legEl.innerHTML = html;
+  }
+
+  // Reason
+  setTextContent(prefix + 'Reason', pick.reason || '--');
+
+  // Action links
+  const chartLink = document.getElementById(prefix + 'ChartLink');
+  if (chartLink) chartLink.dataset.sym = pick.symbol;
+
+  // Sparkline
+  loadSparkline(pick.symbol, prefix + 'Sparkline');
+
+  // Radar chart — ETF 5-axis
+  const maxScores = { momentum: 30, risk: 25, size: 20, 'yield': 15, trend: 10 };
+  drawRadar(prefix + 'Radar', bd, maxScores);
+}
+
+function renderETFVote(elPrefix, market, date) {
+  const el = document.getElementById(elPrefix + 'Vote');
+  if (!el) return;
+  const voted = localStorage.getItem('vote_' + date + '_' + market);
+  el.innerHTML = '<div class="vote-label">你覺得這檔推薦如何？</div>' +
+    '<div class="vote-btns">' +
+    '<button class="vote-btn' + (voted === 'up' ? ' voted' : '') + '" onclick="castVote(\'' + date + '\',\'' + market + '\',\'up\',this)">&#128077; 看好</button>' +
+    '<button class="vote-btn' + (voted === 'down' ? ' voted' : '') + '" onclick="castVote(\'' + date + '\',\'' + market + '\',\'down\',this)">&#128078; 不看好</button>' +
+    '</div><div class="vote-result" id="voteResult_' + market + '"></div>';
+  fetch('/api/vote?date=' + date + '&market=' + market)
+    .then(r => r.json())
+    .then(d => {
+      const rEl = document.getElementById('voteResult_' + market);
+      if (rEl && d.total > 0) rEl.textContent = d.up_pct + '% 看好 (' + d.total + ' 票)';
+    }).catch(() => {});
+}
+
+/* ===========================================================
    Performance Dashboard
    =========================================================== */
 async function loadPerformance() {
@@ -1967,6 +2176,7 @@ function renderMarketSummary(data) {
    =========================================================== */
 initTheme();
 loadDailyPick();
+loadETFPick();
 loadHistoryList();
 loadPerformance();
 </script>

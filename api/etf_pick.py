@@ -1,7 +1,8 @@
 """
-Vercel Serverless Function - Pick Vote
-GET /api/vote?date=2026-04-06&market=us          -> get vote counts
-GET /api/vote?date=2026-04-06&market=us&vote=up   -> cast vote (up/down)
+Vercel Serverless Function - Daily ETF Pick Reader
+GET /api/etf_pick              -> today's ETF picks
+GET /api/etf_pick?date=2026-04-05  -> specific date
+GET /api/etf_pick?list=true    -> available dates
 """
 
 import os
@@ -9,9 +10,11 @@ import json
 import requests
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
+from datetime import datetime, timezone, timedelta
 
 KV_REST_API_URL = os.getenv("KV_REST_API_URL")
 KV_REST_API_TOKEN = os.getenv("KV_REST_API_TOKEN")
+TW_TZ = timezone(timedelta(hours=8))
 
 KV_HEADERS = {}
 if KV_REST_API_TOKEN:
@@ -47,40 +50,42 @@ class handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         params = parse_qs(parsed.query)
 
-        date = params.get("date", [""])[0]
-        market = params.get("market", [""])[0].lower()
-        vote = params.get("vote", [""])[0].lower()
-
-        if not date or market not in ("us", "tw", "us_etf", "tw_etf"):
-            self._send_json(400, {"error": "Missing date or market parameter"})
+        # List mode
+        if params.get("list", [""])[0] == "true":
+            dates = []
+            now = datetime.now(TW_TZ)
+            for i in range(30):
+                d = (now - timedelta(days=i)).strftime("%Y-%m-%d")
+                cached = kv_command("GET", f"etf_pick:{d}")
+                if cached:
+                    dates.append(d)
+            self._send_json(200, {"dates": dates})
             return
 
-        key_up = f"vote:{date}:{market}:up"
-        key_down = f"vote:{date}:{market}:down"
+        # Get specific date or today
+        date = params.get("date", [""])[0]
+        if not date:
+            latest = kv_command("GET", "etf_pick:latest")
+            if latest:
+                date = latest
+            else:
+                date = datetime.now(TW_TZ).strftime("%Y-%m-%d")
 
-        # Cast vote
-        if vote in ("up", "down"):
-            key = key_up if vote == "up" else key_down
-            kv_command("INCR", key)
+        cached = kv_command("GET", f"etf_pick:{date}")
+        if cached:
+            try:
+                data = json.loads(cached) if isinstance(cached, str) else cached
+                self._send_json(200, data)
+                return
+            except (json.JSONDecodeError, TypeError):
+                pass
 
-        # Return counts
-        up = int(kv_command("GET", key_up) or 0)
-        down = int(kv_command("GET", key_down) or 0)
-        total = up + down
-
-        self._send_json(200, {
-            "date": date,
-            "market": market,
-            "up": up,
-            "down": down,
-            "total": total,
-            "up_pct": round(up / total * 100) if total > 0 else 50,
-        })
+        self._send_json(404, {"error": f"No ETF pick data for {date}"})
 
     def _send_json(self, status, body):
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Cache-Control", "public, max-age=300")
         self.end_headers()
         self.wfile.write(json.dumps(body, ensure_ascii=False).encode("utf-8"))
