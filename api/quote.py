@@ -7,6 +7,7 @@ import os
 import json
 import hashlib
 import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 from datetime import datetime, timezone, timedelta
@@ -148,45 +149,52 @@ def _parse_twse_item(item):
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
 
 
-def _fetch_yahoo_quotes(symbols):
-    """Fetch quotes from Yahoo Finance one symbol at a time. Returns dict."""
-    results = {}
-    for symbol in symbols:
+def _fetch_yahoo_single(symbol):
+    """Fetch a single Yahoo Finance quote. Returns (symbol, data_dict) or (symbol, None)."""
+    try:
+        resp = requests.get(
+            YAHOO_CHART_URL.format(symbol=symbol),
+            params={"range": "1d", "interval": "1m"},
+            headers={"User-Agent": "Mozilla/5.0"},
+            timeout=8,
+        )
+        data = resp.json()
+        meta = data["chart"]["result"][0]["meta"]
+        price = meta.get("regularMarketPrice", 0)
+        prev_close = meta.get("chartPreviousClose", 0)
+        name = meta.get("shortName", symbol)
+
+        change = round(price - prev_close, 2)
+        pct = round((change / prev_close) * 100, 2) if prev_close else 0.0
+
+        volume = 0
         try:
-            resp = requests.get(
-                YAHOO_CHART_URL.format(symbol=symbol),
-                params={"range": "1d", "interval": "1m"},
-                headers={"User-Agent": "Mozilla/5.0"},
-                timeout=10,
-            )
-            data = resp.json()
-            meta = data["chart"]["result"][0]["meta"]
-            price = meta.get("regularMarketPrice", 0)
-            prev_close = meta.get("chartPreviousClose", 0)
-            name = meta.get("shortName", symbol)
-
-            change = round(price - prev_close, 2)
-            pct = round((change / prev_close) * 100, 2) if prev_close else 0.0
-
-            # Try to get volume from indicators
-            volume = 0
-            try:
-                indicators = data["chart"]["result"][0].get("indicators", {})
-                vol_series = indicators.get("quote", [{}])[0].get("volume", [])
-                # Sum all non-None minute volumes for total day volume
-                volume = sum(v for v in vol_series if v is not None)
-            except Exception:
-                pass
-
-            results[symbol] = {
-                "name": name,
-                "price": round(price, 2),
-                "change": change,
-                "pct": pct,
-                "volume": volume,
-            }
+            indicators = data["chart"]["result"][0].get("indicators", {})
+            vol_series = indicators.get("quote", [{}])[0].get("volume", [])
+            volume = sum(v for v in vol_series if v is not None)
         except Exception:
             pass
+
+        return symbol, {
+            "name": name,
+            "price": round(price, 2),
+            "change": change,
+            "pct": pct,
+            "volume": volume,
+        }
+    except Exception:
+        return symbol, None
+
+
+def _fetch_yahoo_quotes(symbols):
+    """Fetch quotes from Yahoo Finance in parallel. Returns dict."""
+    results = {}
+    with ThreadPoolExecutor(max_workers=15) as pool:
+        futures = {pool.submit(_fetch_yahoo_single, sym): sym for sym in symbols}
+        for f in as_completed(futures):
+            sym, data = f.result()
+            if data:
+                results[sym] = data
     return results
 
 
@@ -241,15 +249,37 @@ class handler(BaseHTTPRequestHandler):
 
         data = {}
 
-        # Fetch TW stocks
+        # Fetch TW stocks from TWSE realtime
+        tw_fallback = []
         if tw_codes:
             tw_results = _fetch_twse_realtime(tw_codes)
-            data.update(tw_results)
+            for code in tw_codes:
+                result = tw_results.get(code)
+                if result and result["change"] != 0:
+                    data[code] = result
+                elif result:
+                    # Market closed (z="-"), use Yahoo as fallback for change/volume
+                    tw_fallback.append(code)
+                    data[code] = result  # Keep as default in case Yahoo also fails
+                else:
+                    tw_fallback.append(code)
 
-        # Fetch US/intl stocks
-        if us_symbols:
-            us_results = _fetch_yahoo_quotes(us_symbols)
-            data.update(us_results)
+        # Fetch US/intl stocks + TW fallback via Yahoo (parallel)
+        yahoo_symbols = list(us_symbols)
+        if tw_fallback:
+            yahoo_symbols.extend([f"{c}.TW" for c in tw_fallback])
+
+        if yahoo_symbols:
+            us_results = _fetch_yahoo_quotes(yahoo_symbols)
+            for sym, val in us_results.items():
+                if sym.endswith(".TW"):
+                    # Map back to plain code, merge with TWSE name
+                    code = sym.replace(".TW", "")
+                    if code in data and data[code].get("name"):
+                        val["name"] = data[code]["name"]  # Keep Chinese name from TWSE
+                    data[code] = val
+                else:
+                    data[sym] = val
 
         now = datetime.now(TW_TZ).isoformat()
 
