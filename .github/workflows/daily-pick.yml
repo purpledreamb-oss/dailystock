@@ -16,3 +16,4 @@ jobs:
         env:
           PICK_CRON_URL: ${{ secrets.PICK_CRON_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
