@@ -203,8 +203,9 @@ def _fetch_yahoo_quotes(symbols):
 # ---------------------------------------------------------------------------
 
 def _is_tw_stock(symbol):
-    """Taiwan stocks are pure digits (e.g. 2330, 2317, 00878)."""
-    return symbol.isdigit()
+    """Taiwan stocks: digits with optional letter suffix (e.g. 2330, 00878, 00937B)."""
+    import re
+    return bool(re.match(r"^\d{4,6}[A-Z]?$", symbol))
 
 
 class handler(BaseHTTPRequestHandler):

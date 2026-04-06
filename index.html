@@ -1191,7 +1191,7 @@ async function loadChartData(symbol, range) {
     candles.sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
     state.chartData = candles;
     renderChart(candles);
-    updateChartStats(candles);
+    updateChartStats(candles, data.meta);
   } catch (err) {
     console.error('Chart error:', err);
     cleanupChart();
@@ -1353,7 +1353,7 @@ function updateIndicatorCharts() {
   indicatorChartObserver.observe(container);
 }
 
-function updateChartStats(data) {
+function updateChartStats(data, meta) {
   if (!data.length) return;
   const last = data[data.length - 1];
   setTextContent('statOpen', formatNumber(last.open, 2));
@@ -1361,6 +1361,11 @@ function updateChartStats(data) {
   setTextContent('statLow', formatNumber(last.low, 2));
   setTextContent('statClose', formatNumber(last.close, 2));
   setTextContent('statVolume', formatVolume(last.volume));
+  if (meta && meta.fiftyTwoWeekHigh != null && meta.fiftyTwoWeekLow != null) {
+    setTextContent('stat52w', formatNumber(meta.fiftyTwoWeekLow, 2) + ' - ' + formatNumber(meta.fiftyTwoWeekHigh, 2));
+  } else {
+    setTextContent('stat52w', '--');
+  }
 }
 
 /* ===========================================================

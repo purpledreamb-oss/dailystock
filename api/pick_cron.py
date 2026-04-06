@@ -296,7 +296,7 @@ def is_trading_day(date_str, market):
 
 
 def is_taiwan_stock(symbol):
-    return bool(re.match(r"^\d{4,6}$", symbol))
+    return bool(re.match(r"^\d{4,6}[A-Z]?$", symbol))
 
 
 def to_yahoo_symbol(symbol):

@@ -46,8 +46,8 @@ def kv_command(*args):
 
 
 def is_taiwan_stock(symbol):
-    """Check if a symbol is a Taiwan stock (pure digits, e.g. 2330)"""
-    return bool(re.match(r"^\d{4,6}$", symbol))
+    """Check if a symbol is a Taiwan stock (digits with optional letter suffix, e.g. 2330, 00937B)"""
+    return bool(re.match(r"^\d{4,6}[A-Z]?$", symbol))
 
 
 def to_yahoo_symbol(symbol):
