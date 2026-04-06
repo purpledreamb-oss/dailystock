@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Trigger daily stock pick
         run: |
-          curl -s -X GET "${{ secrets.PICK_CRON_URL }}?force=true" \
+          curl -s -X GET "${{ secrets.PICK_CRON_URL }}" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             --max-time 65
         env:
