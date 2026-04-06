@@ -885,6 +885,7 @@ def generate_recommendation(symbol, name, price, change, pct, score, breakdown, 
 - 3-4 句，精簡有力
 - 提及具體數據（PE、RSI、營收成長等）
 - 說明為何現在值得關注
+- 不要提及目標價或預期股價（分析師目標價可能已過時或低於現價，會造成誤導）
 - 中文撰寫
 - 直接輸出推薦原因，不加標題或前言"""
 
