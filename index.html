@@ -1360,6 +1360,60 @@ function updateIndicatorCharts() {
     }
   }
 
+  if (state.indicators.kd && closes.length >= 14) {
+    const kData = [], dData = [];
+    for (let i = 13; i < closes.length; i++) {
+      const window = closes.slice(i - 13, i + 1);
+      const high14 = data.slice(i - 13, i + 1).reduce((m, d) => Math.max(m, d.high), -Infinity);
+      const low14 = data.slice(i - 13, i + 1).reduce((m, d) => Math.min(m, d.low), Infinity);
+      const rsv = high14 === low14 ? 50 : (closes[i] - low14) / (high14 - low14) * 100;
+      const prevK = kData.length ? kData[kData.length - 1].value : 50;
+      const prevD = dData.length ? dData[dData.length - 1].value : 50;
+      const k = prevK * 2 / 3 + rsv / 3;
+      const d = prevD * 2 / 3 + k / 3;
+      kData.push({ time: data[i].time, value: Math.round(k * 100) / 100 });
+      dData.push({ time: data[i].time, value: Math.round(d * 100) / 100 });
+    }
+    const kSeries = indicatorChart.addLineSeries({ color: '#2980B9', lineWidth: 1.5, priceLineVisible: false, title: 'K' });
+    kSeries.setData(kData);
+    const dSeries = indicatorChart.addLineSeries({ color: '#E67E22', lineWidth: 1.5, priceLineVisible: false, title: 'D' });
+    dSeries.setData(dData);
+  }
+
+  if (state.indicators.bollinger) {
+    // Bollinger Bands rendered on main chart
+    const period = 20;
+    if (closes.length >= period) {
+      const upper = [], middle = [], lower = [];
+      for (let i = period - 1; i < closes.length; i++) {
+        const slice = closes.slice(i - period + 1, i + 1);
+        const ma = slice.reduce((a, b) => a + b, 0) / period;
+        const std = Math.sqrt(slice.reduce((s, v) => s + (v - ma) ** 2, 0) / period);
+        middle.push({ time: data[i].time, value: Math.round(ma * 100) / 100 });
+        upper.push({ time: data[i].time, value: Math.round((ma + 2 * std) * 100) / 100 });
+        lower.push({ time: data[i].time, value: Math.round((ma - 2 * std) * 100) / 100 });
+      }
+      if (mainChart) {
+        if (window._bbUpper) { mainChart.removeSeries(window._bbUpper); window._bbUpper = null; }
+        if (window._bbMiddle) { mainChart.removeSeries(window._bbMiddle); window._bbMiddle = null; }
+        if (window._bbLower) { mainChart.removeSeries(window._bbLower); window._bbLower = null; }
+        window._bbUpper = mainChart.addLineSeries({ color: 'rgba(155,89,182,0.6)', lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
+        window._bbMiddle = mainChart.addLineSeries({ color: 'rgba(155,89,182,0.4)', lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false });
+        window._bbLower = mainChart.addLineSeries({ color: 'rgba(155,89,182,0.6)', lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
+        window._bbUpper.setData(upper);
+        window._bbMiddle.setData(middle);
+        window._bbLower.setData(lower);
+      }
+    }
+  } else {
+    // Remove Bollinger if toggled off
+    if (mainChart) {
+      if (window._bbUpper) { try { mainChart.removeSeries(window._bbUpper); } catch(e) {} window._bbUpper = null; }
+      if (window._bbMiddle) { try { mainChart.removeSeries(window._bbMiddle); } catch(e) {} window._bbMiddle = null; }
+      if (window._bbLower) { try { mainChart.removeSeries(window._bbLower); } catch(e) {} window._bbLower = null; }
+    }
+  }
+
   indicatorChart.timeScale().fitContent();
   indicatorChartObserver = new ResizeObserver(entries => {
     if (indicatorChart) indicatorChart.applyOptions({ width: entries[0].contentRect.width });
