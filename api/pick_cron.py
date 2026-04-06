@@ -28,8 +28,8 @@ KV_REST_API_URL = os.getenv("KV_REST_API_URL")
 KV_REST_API_TOKEN = os.getenv("KV_REST_API_TOKEN")
 
 TW_TZ = timezone(timedelta(hours=8))
-PICK_TTL = 604800  # 7 days
-LATEST_TTL = 604800  # 7 days (same as PICK_TTL, survives weekends)
+PICK_TTL = 7776000  # 90 days
+LATEST_TTL = 604800  # 7 days (survives weekends)
 
 KV_HEADERS = {}
 if KV_REST_API_TOKEN:
@@ -1066,6 +1066,7 @@ def run_pick_pipeline(force=False):
             "name": ch.get("name", sym),
             "name_zh": name_map.get(sym, ""),
             "price": price,
+            "pick_price": price,  # snapshot for performance tracking
             "change": change,
             "pct": pct,
             "score": score,
@@ -1091,10 +1092,58 @@ def run_pick_pipeline(force=False):
         result["tw"] = build_pick(top_tw[0], top_tw[1], top_tw[2], "TW")
         steps.append(f"TW pick: {top_tw[0]} (score={top_tw[1]})")
 
+    # --- Phase E2: Market Summary ---
+    if ANTHROPIC_API_KEY:
+        try:
+            summary_prompt = f"""請用3-5條重點摘要今日全球股市動態（{today}），包含美股大盤、台股大盤、重要事件。
+規則：
+- 每條一句話，簡潔有力
+- 提及具體指數漲跌幅
+- 中文撰寫
+- 只輸出 JSON 陣列格式，例如 ["重點1", "重點2", "重點3"]"""
+            sr = requests.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": ANTHROPIC_API_KEY,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json={
+                    "model": "claude-sonnet-4-20250514",
+                    "max_tokens": 300,
+                    "tools": [{"type": "web_search_20250305", "name": "web_search", "max_uses": 2}],
+                    "messages": [{"role": "user", "content": summary_prompt}],
+                },
+                timeout=20,
+            )
+            if sr.status_code == 200:
+                parts = [b["text"] for b in sr.json().get("content", []) if b.get("type") == "text"]
+                raw_text = " ".join(parts).strip()
+                # Extract JSON array
+                import ast
+                start = raw_text.find("[")
+                end = raw_text.rfind("]") + 1
+                if start >= 0 and end > start:
+                    result["market_summary"] = json.loads(raw_text[start:end])
+                steps.append("Market summary generated")
+        except Exception:
+            pass
+
     # --- Phase F: Store in KV ---
     payload = json.dumps(result, ensure_ascii=False)
     kv_command("SET", f"pick:{today}", payload, "EX", PICK_TTL)
     kv_command("SET", "pick:latest", today, "EX", LATEST_TTL)
+
+    # Maintain pick:dates list for performance tracking
+    try:
+        dates_raw = kv_command("GET", "pick:dates")
+        dates_list = json.loads(dates_raw) if dates_raw else []
+    except Exception:
+        dates_list = []
+    if today not in dates_list:
+        dates_list.append(today)
+        dates_list = sorted(dates_list)[-90:]  # keep last 90 entries
+        kv_command("SET", "pick:dates", json.dumps(dates_list))
     steps.append("Stored in KV")
 
     return {"status": "ok", "date": today, "steps": steps, "result": result}

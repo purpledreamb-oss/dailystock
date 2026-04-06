@@ -199,6 +199,39 @@
       text-align: center; margin: 1.5rem 0;
     }
 
+    /* Vote */
+    .pick-vote { margin-top: 0.8rem; text-align: center; }
+    .pick-vote .vote-label { font-size: 0.82rem; color: var(--text-light); margin-bottom: 0.4rem; }
+    .pick-vote .vote-btns { display: flex; gap: 0.5rem; justify-content: center; }
+    .vote-btn { border: 1px solid var(--warm-beige); border-radius: 6px; padding: 0.3rem 1rem; cursor: pointer; font-size: 0.85rem; background: transparent; color: var(--text-main); transition: all 0.2s; }
+    .vote-btn:hover { background: var(--warm-beige); }
+    .vote-btn.voted { background: var(--soft-orange); color: white; border-color: var(--soft-orange); }
+    .vote-result { font-size: 0.8rem; color: var(--text-light); margin-top: 0.4rem; }
+
+    /* Share */
+    .pick-share { margin-top: 0.6rem; display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap; }
+    .share-btn { border: none; border-radius: 5px; padding: 0.25rem 0.7rem; font-size: 0.75rem; cursor: pointer; color: white; }
+    .share-btn.line { background: #06C755; }
+    .share-btn.fb { background: #1877F2; }
+    .share-btn.copy { background: var(--latte); }
+
+    /* Market Summary */
+    .market-summary-card { background: white; border-radius: 0.8rem; padding: 1.2rem 1.5rem; margin: 1rem 0; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+    .market-summary-card h3 { font-size: 0.95rem; color: var(--soft-orange); margin-bottom: 0.6rem; }
+    .market-summary-card ul { list-style: disc; padding-left: 1.2rem; font-size: 0.85rem; line-height: 1.8; color: var(--text-main); }
+
+    /* Performance */
+    .perf-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .perf-stat { background: white; border-radius: 0.8rem; padding: 1rem; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+    .perf-stat-value { font-size: 1.3rem; font-weight: 700; color: var(--dark-brown); }
+    .perf-stat-label { font-size: 0.78rem; color: var(--text-light); margin-top: 0.3rem; }
+
+    /* Countdown */
+    .next-pick-countdown { text-align: center; font-size: 0.85rem; color: var(--text-light); margin: 1rem 0; padding: 0.8rem; background: rgba(245,230,211,0.4); border-radius: 0.6rem; }
+
+    /* Streak badge */
+    .streak-badge { font-size: 0.75rem; color: var(--soft-orange); margin-left: 0.5rem; }
+
     /* Scoring method */
     .method-toggle {
       cursor: pointer; font-size: 0.9rem; color: var(--soft-orange);
@@ -498,6 +531,8 @@
             <a href="#" id="usChartLink" onclick="goToChart(this.dataset.sym); return false;">查看圖表</a>
             <a href="#" id="usFundLink" onclick="goToFundamental(this.dataset.sym); return false;">查看基本面</a>
           </div>
+          <div class="pick-vote" id="usVote"></div>
+          <div class="pick-share" id="usShare"></div>
         </div>
 
         <!-- TW Card -->
@@ -530,8 +565,16 @@
             <a href="#" id="twChartLink" onclick="goToChart(this.dataset.sym); return false;">查看圖表</a>
             <a href="#" id="twFundLink" onclick="goToFundamental(this.dataset.sym); return false;">查看基本面</a>
           </div>
+          <div class="pick-vote" id="twVote"></div>
+          <div class="pick-share" id="twShare"></div>
         </div>
       </div>
+
+      <!-- Market Summary -->
+      <div id="marketSummary" style="display:none;" class="market-summary-card"></div>
+
+      <!-- Countdown to next pick -->
+      <div class="next-pick-countdown" id="nextPickCountdown"></div>
 
       <div class="disclaimer">
         以上分析由 AI 自動生成，僅供參考，不構成任何投資建議。投資有風險，決策前請審慎評估。
@@ -708,10 +751,31 @@
 
   <!-- ===== SECTION: 歷史推薦 ===== -->
   <div class="section" id="sec-history">
-    <h2 class="section-title">歷史推薦</h2>
+    <h2 class="section-title">績效追蹤</h2>
+
+    <!-- Performance Summary -->
+    <div id="perfSummary" class="perf-summary">
+      <div class="perf-stat"><div class="perf-stat-value" id="perfTotal">--</div><div class="perf-stat-label">推薦次數</div></div>
+      <div class="perf-stat"><div class="perf-stat-value" id="perfWinRate">--</div><div class="perf-stat-label">勝率</div></div>
+      <div class="perf-stat"><div class="perf-stat-value" id="perfAvgReturn">--</div><div class="perf-stat-label">平均報酬</div></div>
+      <div class="perf-stat"><div class="perf-stat-value" id="perfBest">--</div><div class="perf-stat-label">最佳推薦</div></div>
+    </div>
+
+    <!-- Performance Table -->
+    <div class="table-wrapper">
+      <table>
+        <thead><tr>
+          <th>日期</th><th>市場</th><th>股票</th><th>推薦價</th><th>現價</th><th>報酬率</th><th>天數</th>
+        </tr></thead>
+        <tbody id="perfTable"><tr><td colspan="7" style="text-align:center;">載入中...</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- History picks browser -->
+    <h3 class="sub-title" style="margin-top:2rem;">歷史推薦詳情</h3>
     <div style="text-align:center;margin-bottom:2rem;">
       <select class="history-select" id="historySelect" onchange="if(this.value) loadHistoryPick(this.value)">
-        <option value="">載入中...</option>
+        <option value="">選擇日期...</option>
       </select>
     </div>
     <div id="historyContent">
@@ -893,11 +957,13 @@ function renderDailyPick(data) {
   const weekday = new Date(data.date + 'T00:00:00+08:00').toLocaleDateString('zh-TW', { weekday: 'long' });
   setTextContent('pickDate', data.date + ' ' + weekday);
 
-  if (data.us) renderPickCard('us', data.us);
+  if (data.us) { renderPickCard('us', data.us); renderShare('us', data.us); renderVote('us', data.date); }
   else document.getElementById('usCard').style.display = 'none';
 
-  if (data.tw) renderPickCard('tw', data.tw);
+  if (data.tw) { renderPickCard('tw', data.tw); renderShare('tw', data.tw); renderVote('tw', data.date); }
   else document.getElementById('twCard').style.display = 'none';
+
+  if (data.market_summary) renderMarketSummary(data);
 }
 
 function renderPickCard(prefix, pick) {
@@ -1734,11 +1800,175 @@ document.getElementById('fundamentalInput').addEventListener('keydown', e => { i
 document.getElementById('watchlistInput').addEventListener('keydown', e => { if (e.key === 'Enter') addWatchlist(); });
 
 /* ===========================================================
+   Share Buttons
+   =========================================================== */
+function renderShare(prefix, pick) {
+  const el = document.getElementById(prefix + 'Share');
+  if (!el) return;
+  const name = pick.name_zh || pick.name || pick.symbol;
+  const text = encodeURIComponent('日日一檔推薦：' + pick.symbol + ' ' + name + ' 評分 ' + pick.score + '/100');
+  const url = encodeURIComponent('https://dailystock.getlessen.com');
+  el.innerHTML =
+    '<button class="share-btn line" onclick="window.open(\'https://social-plugins.line.me/lineit/share?url=' + url + '&text=' + text + '\',\'_blank\')">LINE</button>' +
+    '<button class="share-btn fb" onclick="window.open(\'https://www.facebook.com/sharer/sharer.php?u=' + url + '\',\'_blank\')">Facebook</button>' +
+    '<button class="share-btn copy" onclick="navigator.clipboard.writeText(decodeURIComponent(\'' + text + ' ' + url + '\')); this.textContent=\'已複製\'">複製連結</button>';
+}
+
+/* ===========================================================
+   Vote
+   =========================================================== */
+function renderVote(prefix, date) {
+  const el = document.getElementById(prefix + 'Vote');
+  if (!el) return;
+  const market = prefix;
+  const voted = localStorage.getItem('vote_' + date + '_' + market);
+
+  el.innerHTML = '<div class="vote-label">你覺得這檔推薦如何？</div>' +
+    '<div class="vote-btns">' +
+    '<button class="vote-btn' + (voted === 'up' ? ' voted' : '') + '" onclick="castVote(\'' + date + '\',\'' + market + '\',\'up\',this)">&#128077; 看好</button>' +
+    '<button class="vote-btn' + (voted === 'down' ? ' voted' : '') + '" onclick="castVote(\'' + date + '\',\'' + market + '\',\'down\',this)">&#128078; 不看好</button>' +
+    '</div><div class="vote-result" id="voteResult_' + market + '"></div>';
+
+  // Load existing vote data
+  fetch('/api/vote?date=' + date + '&market=' + market)
+    .then(r => r.json())
+    .then(d => {
+      const rEl = document.getElementById('voteResult_' + market);
+      if (rEl && d.total > 0) rEl.textContent = d.up_pct + '% 看好 (' + d.total + ' 票)';
+    }).catch(() => {});
+}
+
+function castVote(date, market, vote, btn) {
+  if (localStorage.getItem('vote_' + date + '_' + market)) return;
+  localStorage.setItem('vote_' + date + '_' + market, vote);
+  btn.classList.add('voted');
+  fetch('/api/vote?date=' + date + '&market=' + market + '&vote=' + vote)
+    .then(r => r.json())
+    .then(d => {
+      const rEl = document.getElementById('voteResult_' + market);
+      if (rEl) rEl.textContent = d.up_pct + '% 看好 (' + d.total + ' 票)';
+    }).catch(() => {});
+}
+
+/* ===========================================================
+   Countdown to Next Pick
+   =========================================================== */
+function updateCountdown() {
+  const el = document.getElementById('nextPickCountdown');
+  if (!el) return;
+  const now = new Date();
+  const tw = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+  const h = tw.getHours(), m = tw.getMinutes();
+  // Next pick at 05:30 Taiwan time
+  let target = new Date(tw);
+  target.setHours(5, 30, 0, 0);
+  if (h > 5 || (h === 5 && m >= 30)) target.setDate(target.getDate() + 1);
+  // Skip weekends
+  while (target.getDay() === 0 || target.getDay() === 6) target.setDate(target.getDate() + 1);
+  const diff = target - tw;
+  const hours = Math.floor(diff / 3600000);
+  const mins = Math.floor((diff % 3600000) / 60000);
+  el.textContent = '下次精選將在 ' + hours + ' 小時 ' + mins + ' 分鐘後發布（每個交易日 05:30）';
+}
+updateCountdown();
+setInterval(updateCountdown, 60000);
+
+/* ===========================================================
+   Streak Counter
+   =========================================================== */
+function updateStreak() {
+  const today = new Date().toISOString().slice(0, 10);
+  const lastVisit = localStorage.getItem('dailystock_last_visit');
+  let streak = parseInt(localStorage.getItem('dailystock_streak') || '0');
+  if (lastVisit === today) {
+    // Already visited today
+  } else {
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    if (lastVisit === yesterday) {
+      streak += 1;
+    } else {
+      streak = 1;
+    }
+    localStorage.setItem('dailystock_last_visit', today);
+    localStorage.setItem('dailystock_streak', streak);
+  }
+  if (streak > 1) {
+    const badge = document.createElement('span');
+    badge.className = 'streak-badge';
+    badge.textContent = 'Day ' + streak;
+    const logo = document.querySelector('.logo');
+    if (logo && !logo.querySelector('.streak-badge')) logo.appendChild(badge);
+  }
+}
+updateStreak();
+
+/* ===========================================================
+   Performance Dashboard
+   =========================================================== */
+async function loadPerformance() {
+  try {
+    const resp = await fetch('/api/performance');
+    if (!resp.ok) return;
+    const data = await resp.json();
+    renderPerformance(data);
+  } catch(e) {}
+}
+
+function renderPerformance(data) {
+  const s = data.summary || {};
+  setTextContent('perfTotal', s.total_picks || 0);
+  setTextContent('perfWinRate', (s.win_rate || 0) + '%');
+  const avgEl = document.getElementById('perfAvgReturn');
+  if (avgEl) {
+    const avg = s.avg_return || 0;
+    avgEl.textContent = (avg >= 0 ? '+' : '') + avg + '%';
+    avgEl.style.color = avg >= 0 ? 'var(--up)' : 'var(--down)';
+  }
+  if (s.best) {
+    setTextContent('perfBest', s.best.symbol + ' +' + s.best.return_pct + '%');
+  }
+
+  const tbody = document.getElementById('perfTable');
+  if (!tbody || !data.picks || !data.picks.length) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">尚無績效資料</td></tr>';
+    return;
+  }
+  let html = '';
+  data.picks.forEach(p => {
+    const ret = p.return_pct;
+    const retStr = ret != null ? ((ret >= 0 ? '+' : '') + ret + '%') : '--';
+    const retClass = ret != null ? (ret >= 0 ? 'up' : 'down') : '';
+    html += '<tr>' +
+      '<td>' + p.date + '</td>' +
+      '<td>' + p.market + '</td>' +
+      '<td style="cursor:pointer" onclick="goToChart(\'' + p.symbol + '\')">' + p.symbol + ' ' + (p.name || '') + '</td>' +
+      '<td>' + formatNumber(p.pick_price, 2) + '</td>' +
+      '<td>' + (p.current_price ? formatNumber(p.current_price, 2) : '--') + '</td>' +
+      '<td class="' + retClass + '" style="font-weight:600">' + retStr + '</td>' +
+      '<td>' + (p.days_held != null ? p.days_held + '天' : '--') + '</td>' +
+      '</tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+/* ===========================================================
+   Market Summary (from pick data)
+   =========================================================== */
+function renderMarketSummary(data) {
+  const el = document.getElementById('marketSummary');
+  if (!el || !data.market_summary) return;
+  el.style.display = 'block';
+  el.innerHTML = '<h3>今日市場概況</h3><ul>' +
+    data.market_summary.map(s => '<li>' + s + '</li>').join('') + '</ul>';
+}
+
+/* ===========================================================
    Init
    =========================================================== */
 initTheme();
 loadDailyPick();
 loadHistoryList();
+loadPerformance();
 </script>
 
 <!-- Vercel Web Analytics -->

@@ -5,6 +5,8 @@
     { "src": "api/quote.py", "use": "@vercel/python", "config": { "maxDuration": 15 } },
     { "src": "api/chart.py", "use": "@vercel/python", "config": { "maxDuration": 15 } },
     { "src": "api/fundamental.py", "use": "@vercel/python", "config": { "maxDuration": 15 } },
+    { "src": "api/performance.py", "use": "@vercel/python", "config": { "maxDuration": 15 } },
+    { "src": "api/vote.py", "use": "@vercel/python", "config": { "maxDuration": 10 } },
     { "src": "index.html", "use": "@vercel/static" }
   ],
   "routes": [
@@ -13,6 +15,8 @@
     { "src": "/api/quote", "dest": "/api/quote.py" },
     { "src": "/api/chart", "dest": "/api/chart.py" },
     { "src": "/api/fundamental", "dest": "/api/fundamental.py" },
+    { "src": "/api/performance", "dest": "/api/performance.py" },
+    { "src": "/api/vote", "dest": "/api/vote.py" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
