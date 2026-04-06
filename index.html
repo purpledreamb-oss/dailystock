@@ -896,7 +896,8 @@ function renderDailyPick(data) {
 }
 
 function renderPickCard(prefix, pick) {
-  setTextContent(prefix + 'Symbol', pick.symbol);
+  const symText = pick.name_zh ? pick.symbol + ' ' + pick.name_zh : pick.symbol;
+  setTextContent(prefix + 'Symbol', symText);
   setTextContent(prefix + 'Name', pick.name);
   setTextContent(prefix + 'Price', formatNumber(pick.price, 2));
 
