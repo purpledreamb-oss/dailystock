@@ -7,6 +7,7 @@ import os
 import json
 import re
 import requests
+from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 from datetime import datetime, timezone, timedelta
@@ -118,76 +119,162 @@ def fetch_twse_revenue(symbol):
     return revenue_list
 
 
+def _fetch_twse_one_day(symbol, dt):
+    """Fetch institutional data for a single day. Returns dict or None."""
+    try:
+        date_str = dt.strftime("%Y%m%d")
+        date_display = dt.strftime("%Y-%m-%d")
+        url = (
+            f"https://www.twse.com.tw/fund/T86"
+            f"?response=json&date={date_str}&selectType=ALL"
+        )
+        resp = requests.get(url, headers={"User-Agent": YAHOO_UA}, timeout=8)
+        if resp.status_code != 200:
+            return None
+        body = resp.json()
+        if body.get("stat") != "OK":
+            return None
+        for row in body.get("data", []):
+            code = str(row[0]).strip()
+            if code == symbol and len(row) >= 7:
+                def parse_int(s):
+                    return int(str(s).replace(",", "").replace(" ", ""))
+                try:
+                    return {
+                        "date": date_display,
+                        "foreign": parse_int(row[4]),
+                        "investment_trust": parse_int(row[7]),
+                        "dealer": parse_int(row[10]),
+                    }
+                except (ValueError, IndexError):
+                    try:
+                        return {
+                            "date": date_display,
+                            "foreign": parse_int(row[2]),
+                            "investment_trust": parse_int(row[3]),
+                            "dealer": parse_int(row[4]),
+                        }
+                    except (ValueError, IndexError):
+                        pass
+    except Exception:
+        pass
+    return None
+
+
 def fetch_twse_institutional(symbol):
     """
-    Fetch up to 10 trading days of institutional trading data from TWSE.
-    Returns list of {"date": "YYYY-MM-DD", "foreign": int, "investment_trust": int, "dealer": int}
-    or None if no data found.
+    Fetch up to 10 trading days of institutional data in parallel.
     """
     now = datetime.now(tz=timezone(timedelta(hours=8)))
-    results = []
-    days_checked = 0
-    days_back = 0
+    # Collect weekday dates to try (up to 15 weekdays to cover holidays)
+    dates = []
+    for days_back in range(0, 22):
+        dt = now - timedelta(days=days_back)
+        if dt.weekday() < 5:
+            dates.append(dt)
+        if len(dates) >= 15:
+            break
 
-    while len(results) < 10 and days_back < 20:
-        try:
-            dt = now - timedelta(days=days_back)
-            days_back += 1
-            # Skip weekends
-            if dt.weekday() >= 5:
-                continue
-            date_str = dt.strftime("%Y%m%d")
-            date_display = dt.strftime("%Y-%m-%d")
-            url = (
-                f"https://www.twse.com.tw/fund/T86"
-                f"?response=json&date={date_str}&selectType=ALL"
-            )
-            headers = {"User-Agent": YAHOO_UA}
-            resp = requests.get(url, headers=headers, timeout=10)
-            if resp.status_code != 200:
-                continue
-            body = resp.json()
-            if body.get("stat") != "OK":
-                continue
-            data_rows = body.get("data", [])
-            for row in data_rows:
-                code = str(row[0]).strip()
-                if code == symbol and len(row) >= 7:
-                    def parse_int(s):
-                        return int(str(s).replace(",", "").replace(" ", ""))
-                    try:
-                        foreign_net = parse_int(row[4])
-                        trust_net = parse_int(row[7])
-                        dealer_net = parse_int(row[10])
-                        results.append({
-                            "date": date_display,
-                            "foreign": foreign_net,
-                            "investment_trust": trust_net,
-                            "dealer": dealer_net,
-                        })
-                        break
-                    except (ValueError, IndexError):
-                        try:
-                            foreign_net = parse_int(row[2])
-                            trust_net = parse_int(row[3])
-                            dealer_net = parse_int(row[4])
-                            results.append({
-                                "date": date_display,
-                                "foreign": foreign_net,
-                                "investment_trust": trust_net,
-                                "dealer": dealer_net,
-                            })
-                            break
-                        except (ValueError, IndexError):
-                            pass
-        except Exception:
-            continue
+    # Fetch all days in parallel
+    results = []
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        futures = {pool.submit(_fetch_twse_one_day, symbol, dt): dt for dt in dates}
+        for f in futures:
+            r = f.result()
+            if r:
+                results.append(r)
 
     if not results:
         return None
-    # Sort by date ascending (oldest first)
     results.sort(key=lambda r: r["date"])
-    return results
+    return results[-10:]  # Keep last 10
+
+
+def _fetch_yahoo_data(symbol):
+    """Fetch all Yahoo data (chart meta + quoteSummary) in one flow. Returns dict."""
+    data = {}
+    yahoo_symbol = to_yahoo_symbol(symbol)
+
+    try:
+        # Chart meta for price / 52wk (fast, no auth needed)
+        meta = fetch_yahoo_chart_meta(symbol)
+        if meta:
+            data["name"] = meta.get("shortName") or meta.get("longName") or meta.get("symbol", symbol)
+            data["fiftyTwoWeekHigh"] = meta.get("fiftyTwoWeekHigh")
+            data["fiftyTwoWeekLow"] = meta.get("fiftyTwoWeekLow")
+            data["regularMarketPrice"] = meta.get("regularMarketPrice")
+            data["chartPreviousClose"] = meta.get("chartPreviousClose")
+    except Exception:
+        pass
+
+    try:
+        session = requests.Session()
+        session.headers.update({"User-Agent": YAHOO_UA})
+        session.get("https://fc.yahoo.com", timeout=5, allow_redirects=True)
+        crumb_resp = session.get("https://query2.finance.yahoo.com/v1/test/getcrumb", timeout=5)
+        crumb = crumb_resp.text.strip() if crumb_resp.status_code == 200 else ""
+
+        if crumb:
+            url = (
+                f"https://query2.finance.yahoo.com/v10/finance/quoteSummary/{yahoo_symbol}"
+                f"?modules=defaultKeyStatistics,summaryDetail,price,incomeStatementHistoryQuarterly,incomeStatementHistory"
+                f"&crumb={crumb}"
+            )
+            resp = session.get(url, timeout=10)
+            if resp.status_code == 200:
+                body = resp.json()
+                qs_result = body.get("quoteSummary", {}).get("result", [])
+                if qs_result:
+                    modules = qs_result[0]
+                    summary = modules.get("summaryDetail", {})
+                    key_stats = modules.get("defaultKeyStatistics", {})
+                    price_mod = modules.get("price", {})
+
+                    def raw_val(obj, key):
+                        v = obj.get(key, {})
+                        return v.get("raw") if isinstance(v, dict) else v
+
+                    data["pe"] = raw_val(summary, "trailingPE") or raw_val(key_stats, "trailingPE")
+                    data["pb"] = raw_val(key_stats, "priceToBook")
+                    data["eps"] = raw_val(key_stats, "trailingEps") or raw_val(summary, "trailingEps")
+                    data["dividendYield"] = raw_val(summary, "dividendYield")
+                    if data.get("dividendYield") is not None:
+                        data["dividendYield"] = round(data["dividendYield"] * 100, 2)
+                    data["marketCap"] = raw_val(price_mod, "marketCap") or raw_val(summary, "marketCap")
+
+                    if not data.get("name"):
+                        data["name"] = price_mod.get("shortName") or price_mod.get("longName") or symbol
+
+                    # Annual revenue (up to 4 years)
+                    rev_list = []
+                    inc_a = modules.get("incomeStatementHistory", {})
+                    for stmt in inc_a.get("incomeStatementHistory", []):
+                        end_date = stmt.get("endDate", {}).get("fmt", "")
+                        total_rev = stmt.get("totalRevenue", {})
+                        rev_raw = total_rev.get("raw") if isinstance(total_rev, dict) else None
+                        if end_date and rev_raw:
+                            year = end_date.split("-")[0]
+                            rev_list.append({"month": year, "value": rev_raw, "type": "annual"})
+
+                    # Quarterly revenue (recent 4 quarters)
+                    inc_q = modules.get("incomeStatementHistoryQuarterly", {})
+                    for stmt in inc_q.get("incomeStatementHistory", []):
+                        end_date = stmt.get("endDate", {}).get("fmt", "")
+                        total_rev = stmt.get("totalRevenue", {})
+                        rev_raw = total_rev.get("raw") if isinstance(total_rev, dict) else None
+                        if end_date and rev_raw:
+                            parts = end_date.split("-")
+                            if len(parts) >= 2:
+                                month = int(parts[1])
+                                quarter = (month - 1) // 3 + 1
+                                label = f"{parts[0]}-Q{quarter}"
+                                rev_list.append({"month": label, "value": rev_raw, "type": "quarterly"})
+                    if rev_list:
+                        data["revenue"] = rev_list
+    except Exception:
+        pass
+
+    return data
 
 
 def build_fundamental_data(symbol):
@@ -209,106 +296,20 @@ def build_fundamental_data(symbol):
         "institutional": None,
     }
 
-    # 1. Yahoo Finance chart meta (works for both TW and US)
-    try:
-        meta = fetch_yahoo_chart_meta(symbol)
-        if meta:
-            result["name"] = meta.get("shortName") or meta.get("longName") or meta.get("symbol", symbol)
-            result["fiftyTwoWeekHigh"] = meta.get("fiftyTwoWeekHigh")
-            result["fiftyTwoWeekLow"] = meta.get("fiftyTwoWeekLow")
-            result["regularMarketPrice"] = meta.get("regularMarketPrice")
-            result["chartPreviousClose"] = meta.get("chartPreviousClose")
-    except Exception:
-        pass
+    # Run Yahoo and TWSE in parallel
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        yahoo_future = pool.submit(_fetch_yahoo_data, symbol)
+        inst_future = pool.submit(fetch_twse_institutional, symbol) if market == "TW" else None
 
-    # 2. Yahoo Finance quoteSummary for PE, PB, EPS, marketCap, dividendYield
-    #    Requires crumb-based auth since Yahoo blocked unauthenticated access
-    try:
-        yahoo_symbol = to_yahoo_symbol(symbol)
-        session = requests.Session()
-        session.headers.update({"User-Agent": YAHOO_UA})
+        yahoo_data = yahoo_future.result()
+        result.update({k: v for k, v in yahoo_data.items() if v is not None})
 
-        # Get cookies from Yahoo
-        session.get("https://fc.yahoo.com", timeout=10, allow_redirects=True)
+        if inst_future:
+            try:
+                result["institutional"] = inst_future.result()
+            except Exception:
+                pass
 
-        # Get crumb
-        crumb_resp = session.get(
-            "https://query2.finance.yahoo.com/v1/test/getcrumb", timeout=10
-        )
-        crumb = crumb_resp.text.strip() if crumb_resp.status_code == 200 else ""
-
-        if crumb:
-            url = (
-                f"https://query2.finance.yahoo.com/v10/finance/quoteSummary/{yahoo_symbol}"
-                f"?modules=defaultKeyStatistics,summaryDetail,price,incomeStatementHistoryQuarterly&crumb={crumb}"
-            )
-            resp = session.get(url, timeout=15)
-            if resp.status_code == 200:
-                body = resp.json()
-                qs_result = body.get("quoteSummary", {}).get("result", [])
-                if qs_result:
-                    modules = qs_result[0]
-
-                    summary = modules.get("summaryDetail", {})
-                    key_stats = modules.get("defaultKeyStatistics", {})
-                    price_mod = modules.get("price", {})
-
-                    def raw_val(obj, key):
-                        v = obj.get(key, {})
-                        if isinstance(v, dict):
-                            return v.get("raw")
-                        return v
-
-                    result["pe"] = raw_val(summary, "trailingPE") or raw_val(key_stats, "trailingPE")
-                    result["pb"] = raw_val(key_stats, "priceToBook")
-                    result["eps"] = raw_val(key_stats, "trailingEps") or raw_val(summary, "trailingEps")
-                    result["dividendYield"] = raw_val(summary, "dividendYield")
-                    if result["dividendYield"] is not None:
-                        result["dividendYield"] = round(result["dividendYield"] * 100, 2)
-
-                    mc = raw_val(price_mod, "marketCap") or raw_val(summary, "marketCap")
-                    result["marketCap"] = mc
-
-                    # Fill name from price module if not yet set
-                    if not result["name"]:
-                        result["name"] = (
-                            price_mod.get("shortName")
-                            or price_mod.get("longName")
-                            or symbol
-                        )
-
-                    # Quarterly revenue from income statement
-                    inc_q = modules.get("incomeStatementHistoryQuarterly", {})
-                    stmts = inc_q.get("incomeStatementHistory", [])
-                    rev_list = []
-                    for stmt in stmts:
-                        end_date = stmt.get("endDate", {}).get("fmt", "")
-                        total_rev = stmt.get("totalRevenue", {})
-                        rev_raw = total_rev.get("raw") if isinstance(total_rev, dict) else None
-                        if end_date and rev_raw:
-                            # Convert "2025-12-31" to "2025-Q4" format
-                            parts = end_date.split("-")
-                            if len(parts) >= 2:
-                                month = int(parts[1])
-                                quarter = (month - 1) // 3 + 1
-                                label = f"{parts[0]}-Q{quarter}"
-                                rev_list.append({"month": label, "value": rev_raw})
-                    if rev_list:
-                        result["revenue"] = rev_list
-
-    except Exception:
-        pass
-
-    # 3. Taiwan-specific data
-    if market == "TW":
-
-        # Institutional trading from TWSE
-        try:
-            result["institutional"] = fetch_twse_institutional(symbol)
-        except Exception:
-            pass
-
-    # Fallback name
     if not result["name"]:
         result["name"] = symbol
 
