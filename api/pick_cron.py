@@ -29,7 +29,7 @@ KV_REST_API_TOKEN = os.getenv("KV_REST_API_TOKEN")
 
 TW_TZ = timezone(timedelta(hours=8))
 PICK_TTL = 604800  # 7 days
-LATEST_TTL = 90000  # 25 hours
+LATEST_TTL = 604800  # 7 days (same as PICK_TTL, survives weekends)
 
 KV_HEADERS = {}
 if KV_REST_API_TOKEN:

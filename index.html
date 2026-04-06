@@ -872,10 +872,12 @@ async function loadDailyPick() {
     const resp = await fetch('/api/pick');
     if (!resp.ok) throw new Error('No pick data');
     const data = await resp.json();
+    if (data.error) throw new Error(data.error);
     renderDailyPick(data);
   } catch (err) {
+    setTextContent('pickDate', new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'long' }));
     document.getElementById('pickContent').innerHTML =
-      '<div class="error-container">今日精選尚未產生<br><button class="retry-btn" onclick="loadDailyPick()">重新載入</button></div>';
+      '<div class="error-container" style="padding:3rem;">今日精選尚未產生，請稍後再來<br><small style="color:var(--text-light);display:block;margin:0.5rem 0">推薦在每個交易日凌晨自動生成</small><button class="retry-btn" onclick="loadDailyPick()">重新載入</button></div>';
   }
 }
 
