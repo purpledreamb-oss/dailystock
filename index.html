@@ -487,7 +487,7 @@
               <div class="score-badge" id="usScoreBadge">--</div>
               <div><div style="font-weight:500">綜合評分</div><div class="score-label">滿分 100</div></div>
             </div>
-            <div class="radar-container"><canvas id="usRadar" width="140" height="140"></canvas></div>
+            <div class="radar-container"><canvas id="usRadar" width="200" height="200"></canvas></div>
             <div class="score-bar" id="usScoreBar"></div>
             <div class="score-legend" id="usScoreLegend"></div>
           </div>
@@ -519,7 +519,7 @@
               <div class="score-badge" id="twScoreBadge">--</div>
               <div><div style="font-weight:500">綜合評分</div><div class="score-label">滿分 100</div></div>
             </div>
-            <div class="radar-container"><canvas id="twRadar" width="140" height="140"></canvas></div>
+            <div class="radar-container"><canvas id="twRadar" width="200" height="200"></canvas></div>
             <div class="score-bar" id="twScoreBar"></div>
             <div class="score-legend" id="twScoreLegend"></div>
           </div>
@@ -1511,7 +1511,14 @@ function drawRadar(canvasId, breakdown, maxScores) {
   const ctx = canvas.getContext('2d');
   const w = canvas.width, h = canvas.height;
   ctx.clearRect(0, 0, w, h);
-  const cx = w / 2, cy = h / 2, r = Math.min(cx, cy) - 15;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = 200 * dpr;
+  canvas.height = 200 * dpr;
+  canvas.style.width = '200px';
+  canvas.style.height = '200px';
+  ctx.scale(dpr, dpr);
+  const w = 200, h = 200;
+  const cx = w / 2, cy = h / 2, r = Math.min(cx, cy) - 30;
   const labels = Object.keys(breakdown);
   const n = labels.length;
   if (n < 3) return;
@@ -1565,15 +1572,16 @@ function drawRadar(canvasId, breakdown, maxScores) {
   ctx.stroke();
 
   // Labels
-  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-main').trim() || '#3E2F1C';
-  ctx.font = '11px "Noto Sans TC", sans-serif';
+  ctx.font = 'bold 13px "Noto Sans TC", sans-serif';
   ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
   labels.forEach((key, i) => {
     const angle = startAngle + i * angleStep;
-    const lx = cx + (r + 12) * Math.cos(angle);
-    const ly = cy + (r + 12) * Math.sin(angle);
+    const lx = cx + (r + 22) * Math.cos(angle);
+    const ly = cy + (r + 22) * Math.sin(angle);
     const name = labelNames[key] || key;
-    ctx.fillText(name + ' ' + (breakdown[key] || 0), lx, ly + 4);
+    ctx.fillStyle = colors[key] || '#5C4A32';
+    ctx.fillText(name + ' ' + (breakdown[key] || 0), lx, ly);
   });
 }
 
