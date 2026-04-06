@@ -1553,14 +1553,12 @@ function drawSparkline(canvasId, values) {
 function drawRadar(canvasId, breakdown, maxScores) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const w = canvas.width, h = canvas.height;
-  ctx.clearRect(0, 0, w, h);
   const dpr = window.devicePixelRatio || 1;
   canvas.width = 200 * dpr;
   canvas.height = 200 * dpr;
   canvas.style.width = '200px';
   canvas.style.height = '200px';
+  const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
   const w = 200, h = 200;
   const cx = w / 2, cy = h / 2, r = Math.min(cx, cy) - 30;
