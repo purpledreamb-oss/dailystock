@@ -350,6 +350,72 @@
       background-repeat: no-repeat; background-position: right 0.8rem center;
     }
 
+    /* === SORTABLE TABLE === */
+    thead th.sortable { cursor: pointer; user-select: none; position: relative; }
+    thead th.sortable:hover { color: var(--dark-brown); }
+    thead th.sortable::after { content: '⇅'; margin-left: 4px; font-size: 0.7rem; opacity: 0.4; }
+    thead th.sortable.asc::after { content: '↑'; opacity: 1; }
+    thead th.sortable.desc::after { content: '↓'; opacity: 1; }
+    .filter-tabs { display: flex; gap: 0.4rem; margin-bottom: 0.8rem; }
+    .filter-tabs button {
+      padding: 0.3rem 0.8rem; border: 1px solid var(--soft-orange); border-radius: 0.4rem;
+      background: transparent; color: var(--soft-orange); font-size: 0.82rem; cursor: pointer;
+      font-family: 'Noto Sans TC', sans-serif;
+    }
+    .filter-tabs button.active { background: var(--dark-brown); color: var(--cream); border-color: var(--dark-brown); }
+
+    /* === SKELETON LOADING === */
+    .skeleton { background: linear-gradient(90deg, rgba(200,160,100,0.08) 25%, rgba(200,160,100,0.18) 50%, rgba(200,160,100,0.08) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 0.4rem; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .skeleton-line { height: 1rem; margin: 0.5rem 0; }
+    .skeleton-card { height: 180px; border-radius: 1rem; }
+    .skeleton-table-row { display: flex; gap: 1rem; padding: 0.8rem; }
+    .skeleton-table-row div { flex: 1; height: 1rem; }
+
+    /* === SPARKLINE === */
+    .sparkline-container { display: inline-block; vertical-align: middle; margin-left: 0.5rem; }
+
+    /* === RADAR CHART === */
+    .radar-container { display: flex; justify-content: center; margin: 0.8rem 0; }
+
+    /* === DARK/LIGHT TOGGLE === */
+    .theme-toggle {
+      background: none; border: 1px solid var(--soft-orange); border-radius: 0.5rem;
+      color: var(--soft-orange); cursor: pointer; font-size: 1rem; padding: 0.3rem 0.5rem;
+      line-height: 1; transition: all 0.3s;
+    }
+    .theme-toggle:hover { background: rgba(200,160,100,0.12); }
+
+    /* Dark theme */
+    [data-theme="dark"] {
+      --cream: #1a1a2e;
+      --warm-beige: #16213e;
+      --soft-orange: #e2a04a;
+      --dark-brown: #e8d5b7;
+      --latte: #c4a882;
+      --text-main: #e8e0d4;
+      --text-light: #9a8e80;
+      --up: #ef5350;
+      --down: #66bb6a;
+    }
+    [data-theme="dark"] nav { background: rgba(26,26,46,0.95); }
+    [data-theme="dark"] .pick-card,
+    [data-theme="dark"] .index-card,
+    [data-theme="dark"] .fundamental-card,
+    [data-theme="dark"] .chart-container { background: #16213e; }
+    [data-theme="dark"] .search-bar input { background: #16213e; color: var(--text-main); border-color: rgba(200,160,100,0.2); }
+    [data-theme="dark"] .method-content { background: #16213e; }
+    [data-theme="dark"] .history-select { background: #16213e; color: var(--text-main); }
+
+    /* Error retry */
+    .error-container { text-align: center; padding: 2rem; color: var(--text-light); }
+    .error-container .retry-btn {
+      margin-top: 0.8rem; padding: 0.5rem 1.2rem; border: 1px solid var(--soft-orange);
+      border-radius: 0.5rem; background: transparent; color: var(--soft-orange);
+      cursor: pointer; font-size: 0.9rem; font-family: 'Noto Sans TC', sans-serif;
+    }
+    .error-container .retry-btn:hover { background: var(--soft-orange); color: white; }
+
     /* === RWD === */
     @media (max-width: 768px) {
       nav { padding: 0.6rem 1rem; }
@@ -373,7 +439,10 @@
   <!-- NAV -->
   <nav>
     <div class="logo" onclick="location.hash='#pick'">日日一檔<span>每日精選好股</span></div>
-    <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')">&#9776;</button>
+    <div style="display:flex;align-items:center;gap:0.5rem;">
+      <button class="theme-toggle" onclick="toggleTheme()" title="切換主題" id="themeBtn">🌙</button>
+      <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')">&#9776;</button>
+    </div>
     <ul class="nav-links">
       <li><a href="#pick" data-section="pick">今日精選</a></li>
       <li><a href="#market" data-section="market">行情</a></li>
@@ -392,7 +461,10 @@
     <div class="pick-date" id="pickDate">載入中...</div>
 
     <div id="pickContent">
-      <div class="spinner-container"><div class="spinner"></div><div>正在載入今日推薦...</div></div>
+      <div class="pick-grid">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+      </div>
     </div>
 
     <div id="pickCards" style="display:none;">
@@ -408,12 +480,14 @@
           <div>
             <span class="pick-price" id="usPrice">--</span>
             <span class="pick-change" id="usChange">--</span>
+            <span class="sparkline-container"><canvas id="usSparkline" width="80" height="30"></canvas></span>
           </div>
           <div class="pick-score-section">
             <div class="pick-score-header">
               <div class="score-badge" id="usScoreBadge">--</div>
               <div><div style="font-weight:500">綜合評分</div><div class="score-label">滿分 100</div></div>
             </div>
+            <div class="radar-container"><canvas id="usRadar" width="140" height="140"></canvas></div>
             <div class="score-bar" id="usScoreBar"></div>
             <div class="score-legend" id="usScoreLegend"></div>
           </div>
@@ -438,12 +512,14 @@
           <div>
             <span class="pick-price" id="twPrice">--</span>
             <span class="pick-change" id="twChange">--</span>
+            <span class="sparkline-container"><canvas id="twSparkline" width="80" height="30"></canvas></span>
           </div>
           <div class="pick-score-section">
             <div class="pick-score-header">
               <div class="score-badge" id="twScoreBadge">--</div>
               <div><div style="font-weight:500">綜合評分</div><div class="score-label">滿分 100</div></div>
             </div>
+            <div class="radar-container"><canvas id="twRadar" width="140" height="140"></canvas></div>
             <div class="score-bar" id="twScoreBar"></div>
             <div class="score-legend" id="twScoreLegend"></div>
           </div>
@@ -526,26 +602,36 @@
     <div id="watchlistEmpty" class="placeholder-msg" style="margin-bottom:1.5rem;">尚未加入自選股</div>
 
     <h3 class="sub-title">台股熱門個股</h3>
+    <div class="filter-tabs" data-table="twStockTable">
+      <button class="active" onclick="filterTable('twStockTable','all',this)">全部</button>
+      <button onclick="filterTable('twStockTable','up',this)">漲</button>
+      <button onclick="filterTable('twStockTable','down',this)">跌</button>
+    </div>
     <div class="table-wrapper">
-      <table><thead><tr><th>代號</th><th>名稱</th><th>股價</th><th>漲跌</th><th>漲跌%</th><th>成交量</th></tr></thead>
+      <table><thead><tr><th>代號</th><th>名稱</th><th class="sortable" data-sort="price" data-table="twStockTable" onclick="sortTable(this)">股價</th><th class="sortable" data-sort="change" data-table="twStockTable" onclick="sortTable(this)">漲跌</th><th class="sortable" data-sort="pct" data-table="twStockTable" onclick="sortTable(this)">漲跌%</th><th class="sortable" data-sort="volume" data-table="twStockTable" onclick="sortTable(this)">成交量</th></tr></thead>
       <tbody id="twStockTable"></tbody></table>
     </div>
 
     <h3 class="sub-title">美股熱門個股</h3>
+    <div class="filter-tabs" data-table="usStockTable">
+      <button class="active" onclick="filterTable('usStockTable','all',this)">全部</button>
+      <button onclick="filterTable('usStockTable','up',this)">漲</button>
+      <button onclick="filterTable('usStockTable','down',this)">跌</button>
+    </div>
     <div class="table-wrapper">
-      <table><thead><tr><th>代號</th><th>名稱</th><th>股價</th><th>漲跌</th><th>漲跌%</th><th>成交量</th></tr></thead>
+      <table><thead><tr><th>代號</th><th>名稱</th><th class="sortable" data-sort="price" data-table="usStockTable" onclick="sortTable(this)">股價</th><th class="sortable" data-sort="change" data-table="usStockTable" onclick="sortTable(this)">漲跌</th><th class="sortable" data-sort="pct" data-table="usStockTable" onclick="sortTable(this)">漲跌%</th><th class="sortable" data-sort="volume" data-table="usStockTable" onclick="sortTable(this)">成交量</th></tr></thead>
       <tbody id="usStockTable"></tbody></table>
     </div>
 
     <h3 class="sub-title">台股熱門 ETF</h3>
     <div class="table-wrapper">
-      <table><thead><tr><th>代號</th><th>名稱</th><th>股價</th><th>漲跌</th><th>漲跌%</th><th>成交量</th></tr></thead>
+      <table><thead><tr><th>代號</th><th>名稱</th><th class="sortable" data-sort="price" data-table="twEtfTable" onclick="sortTable(this)">股價</th><th class="sortable" data-sort="change" data-table="twEtfTable" onclick="sortTable(this)">漲跌</th><th class="sortable" data-sort="pct" data-table="twEtfTable" onclick="sortTable(this)">漲跌%</th><th class="sortable" data-sort="volume" data-table="twEtfTable" onclick="sortTable(this)">成交量</th></tr></thead>
       <tbody id="twEtfTable"></tbody></table>
     </div>
 
     <h3 class="sub-title">美股熱門 ETF</h3>
     <div class="table-wrapper">
-      <table><thead><tr><th>代號</th><th>名稱</th><th>股價</th><th>漲跌</th><th>漲跌%</th><th>成交量</th></tr></thead>
+      <table><thead><tr><th>代號</th><th>名稱</th><th class="sortable" data-sort="price" data-table="usEtfTable" onclick="sortTable(this)">股價</th><th class="sortable" data-sort="change" data-table="usEtfTable" onclick="sortTable(this)">漲跌</th><th class="sortable" data-sort="pct" data-table="usEtfTable" onclick="sortTable(this)">漲跌%</th><th class="sortable" data-sort="volume" data-table="usEtfTable" onclick="sortTable(this)">成交量</th></tr></thead>
       <tbody id="usEtfTable"></tbody></table>
     </div>
   </div>
@@ -785,7 +871,7 @@ async function loadDailyPick() {
     renderDailyPick(data);
   } catch (err) {
     document.getElementById('pickContent').innerHTML =
-      '<div class="placeholder-msg">今日精選尚未產生，請稍後再來</div>';
+      '<div class="error-container">今日精選尚未產生<br><button class="retry-btn" onclick="loadDailyPick()">重新載入</button></div>';
   }
 }
 
@@ -854,6 +940,16 @@ function renderPickCard(prefix, pick) {
   const fundLink = document.getElementById(prefix + 'FundLink');
   if (chartLink) chartLink.dataset.sym = pick.symbol;
   if (fundLink) fundLink.dataset.sym = pick.symbol;
+
+  // Sparkline
+  loadSparkline(pick.symbol, prefix + 'Sparkline');
+
+  // Radar chart
+  const isTW = prefix === 'tw';
+  const maxScores = isTW
+    ? { technical: 35, fundamental: 40, institutional: 15, risk: 10 }
+    : { technical: 40, fundamental: 40, risk: 20 };
+  drawRadar(prefix + 'Radar', bd, maxScores);
 }
 
 function goToChart(sym) {
@@ -977,23 +1073,60 @@ function renderMarketData(data) {
   renderStockTable('usEtfTable', US_ETF_DEFAULT.split(','), US_ETF_NAMES, data);
 }
 
+// Store table data for sorting/filtering
+const tableDataStore = {};
+
 function renderStockTable(tableId, symbols, nameMap, data) {
   const tbody = document.getElementById(tableId);
   if (!tbody) return;
-  let html = '';
-  symbols.forEach(sym => {
+  // Store row data for sorting/filtering
+  const rows = symbols.map(sym => {
     const d = data[sym] || {};
-    const price = d.price || 0, chg = d.change || 0, chgP = d.pct || 0, vol = d.volume || 0;
-    const name = d.name || nameMap[sym] || sym;
-    const cls = changeClass(chg);
-    html += '<tr class="stock-row" onclick="goToChart(\'' + sym + '\')">' +
-      '<td class="symbol-cell">' + sym + '</td><td>' + name + '</td>' +
-      '<td class="price-cell">' + formatNumber(price, 2) + '</td>' +
-      '<td class="' + cls + '">' + changePrefix(chg) + formatNumber(Math.abs(chg), 2) + '</td>' +
-      '<td class="' + cls + '">' + (chg >= 0 ? '+' : '') + formatNumber(chgP, 2) + '%</td>' +
-      '<td>' + formatVolume(vol) + '</td></tr>';
+    return { sym, name: d.name || nameMap[sym] || sym, price: d.price || 0, change: d.change || 0, pct: d.pct || 0, volume: d.volume || 0 };
+  });
+  tableDataStore[tableId] = rows;
+  renderTableRows(tableId, rows);
+}
+
+function renderTableRows(tableId, rows) {
+  const tbody = document.getElementById(tableId);
+  if (!tbody) return;
+  let html = '';
+  rows.forEach(r => {
+    const cls = changeClass(r.change);
+    html += '<tr class="stock-row" onclick="goToChart(\'' + r.sym + '\')">' +
+      '<td class="symbol-cell">' + r.sym + '</td><td>' + r.name + '</td>' +
+      '<td class="price-cell">' + formatNumber(r.price, 2) + '</td>' +
+      '<td class="' + cls + '">' + changePrefix(r.change) + formatNumber(Math.abs(r.change), 2) + '</td>' +
+      '<td class="' + cls + '">' + (r.change >= 0 ? '+' : '') + formatNumber(r.pct, 2) + '%</td>' +
+      '<td>' + formatVolume(r.volume) + '</td></tr>';
   });
   tbody.innerHTML = html || '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-light)">暫無資料</td></tr>';
+}
+
+function sortTable(th) {
+  const tableId = th.dataset.table;
+  const sortKey = th.dataset.sort;
+  const rows = tableDataStore[tableId];
+  if (!rows) return;
+  const isAsc = th.classList.contains('asc');
+  // Clear sort state from siblings
+  th.closest('tr').querySelectorAll('.sortable').forEach(s => s.classList.remove('asc', 'desc'));
+  const dir = isAsc ? -1 : 1;
+  th.classList.add(isAsc ? 'desc' : 'asc');
+  const sorted = [...rows].sort((a, b) => (a[sortKey] - b[sortKey]) * dir);
+  renderTableRows(tableId, sorted);
+}
+
+function filterTable(tableId, filter, btn) {
+  const rows = tableDataStore[tableId];
+  if (!rows) return;
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  let filtered = rows;
+  if (filter === 'up') filtered = rows.filter(r => r.change > 0);
+  else if (filter === 'down') filtered = rows.filter(r => r.change < 0);
+  renderTableRows(tableId, filtered);
 }
 
 function updateRefreshStatus() {
@@ -1214,7 +1347,7 @@ function searchFundamental() {
 async function loadFundamental(symbol) {
   const contentEl = document.getElementById('fundamentalContent');
   const dataEl = document.getElementById('fundamentalData');
-  contentEl.innerHTML = '<div class="spinner-container"><div class="spinner"></div><div>載入中...</div></div>';
+  contentEl.innerHTML = '<div class="fundamental-grid" style="margin-bottom:1rem;">' + Array(6).fill('<div class="skeleton" style="height:60px;border-radius:0.8rem;"></div>').join('') + '</div><div class="skeleton" style="height:200px;border-radius:1rem;"></div>';
   contentEl.style.display = 'block'; dataEl.style.display = 'none';
 
   try {
@@ -1229,17 +1362,30 @@ async function loadFundamental(symbol) {
     setTextContent('fEPS', data.eps != null ? formatNumber(data.eps, 2) : '--');
     setTextContent('fROE', data.roe != null ? formatNumber(data.roe, 2) + '%' : '--%');
 
-    // Revenue chart
+    // Revenue chart with YoY growth
     const revEl = document.getElementById('revenueChartEl');
     if (revEl && data.revenue && data.revenue.length > 0) {
       const revs = [...data.revenue].sort((a, b) => a.month < b.month ? -1 : 1);
       const maxVal = Math.max(...revs.map(r => r.value));
+      // Calculate YoY for quarterly data (compare same quarter previous year)
+      const yoyMap = {};
+      revs.forEach(r => {
+        const match = r.month.match(/^(\d{4})-Q(\d)$/);
+        if (match) {
+          const prevKey = (parseInt(match[1]) - 1) + '-Q' + match[2];
+          const prev = revs.find(p => p.month === prevKey);
+          if (prev && prev.value > 0) yoyMap[r.month] = ((r.value - prev.value) / prev.value * 100).toFixed(1);
+        }
+      });
       revEl.innerHTML = '<div style="display:flex;align-items:flex-end;gap:6px;height:220px;padding:10px 0;">' +
         revs.map(r => {
           const pct = maxVal > 0 ? (r.value / maxVal * 100) : 0;
           const valStr = r.value >= 1e8 ? (r.value / 1e8).toFixed(1) + '億' : r.value >= 1e4 ? (r.value / 1e4).toFixed(0) + '萬' : r.value.toLocaleString();
           const label = r.month.includes('Q') ? r.month : r.month.slice(5) + '月';
+          const yoy = yoyMap[r.month];
+          const yoyHtml = yoy != null ? '<div style="font-size:0.65rem;' + (parseFloat(yoy) >= 0 ? 'color:var(--up)' : 'color:var(--down)') + '">YoY ' + (parseFloat(yoy) >= 0 ? '+' : '') + yoy + '%</div>' : '';
           return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">' +
+            yoyHtml +
             '<div style="font-size:0.72rem;color:var(--text-light)">' + valStr + '</div>' +
             '<div style="width:100%;max-width:48px;height:' + pct + '%;min-height:4px;background:var(--soft-orange);border-radius:4px 4px 0 0;"></div>' +
             '<div style="font-size:0.68rem;color:var(--text-light)">' + label + '</div></div>';
@@ -1248,20 +1394,25 @@ async function loadFundamental(symbol) {
       revEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-light)">暫無營收資料</div>';
     }
 
-    // Institutional
+    // Institutional - supports both single object and array of 10 days
     const instEl = document.getElementById('institutionalTable');
     if (instEl && data.institutional) {
-      const inst = data.institutional;
-      const total = (inst.foreign || 0) + (inst.investment_trust || 0) + (inst.dealer || 0);
       const fmtInt = (v) => { const n = v || 0; return '<span class="' + (n > 0 ? 'up' : n < 0 ? 'down' : '') + '">' + (n > 0 ? '+' : '') + n.toLocaleString() + '</span>'; };
-      instEl.innerHTML = '<tr><td>最新</td><td>' + fmtInt(inst.foreign) + '</td><td>' + fmtInt(inst.investment_trust) + '</td><td>' + fmtInt(inst.dealer) + '</td><td>' + fmtInt(total) + '</td></tr>';
+      const instList = Array.isArray(data.institutional) ? data.institutional : [data.institutional];
+      let html = '';
+      instList.forEach(inst => {
+        const total = (inst.foreign || 0) + (inst.investment_trust || 0) + (inst.dealer || 0);
+        const dateLabel = inst.date || '最新';
+        html += '<tr><td>' + dateLabel + '</td><td>' + fmtInt(inst.foreign) + '</td><td>' + fmtInt(inst.investment_trust) + '</td><td>' + fmtInt(inst.dealer) + '</td><td>' + fmtInt(total) + '</td></tr>';
+      });
+      instEl.innerHTML = html;
     } else if (instEl) {
       instEl.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:1rem;color:var(--text-light)">暫無法人資料</td></tr>';
     }
 
     contentEl.style.display = 'none'; dataEl.style.display = 'block';
   } catch (err) {
-    contentEl.innerHTML = '<div class="placeholder-msg">無法載入基本面資料</div>';
+    contentEl.innerHTML = '<div class="error-container">無法載入基本面資料<br><button class="retry-btn" onclick="loadFundamental(\'' + symbol + '\')">重新載入</button></div>';
   }
 }
 
@@ -1314,6 +1465,146 @@ function buildHistoryCard(label, pick) {
 }
 
 /* ===========================================================
+   Sparkline (mini trend chart on pick cards)
+   =========================================================== */
+async function loadSparkline(symbol, canvasId) {
+  try {
+    const resp = await fetch('/api/chart?symbol=' + encodeURIComponent(symbol) + '&range=1mo&interval=1d');
+    if (!resp.ok) return;
+    const text = await resp.text();
+    let data;
+    try { data = JSON.parse(text); } catch(e) { return; }
+    let candles = Array.isArray(data) ? data : (data.data || data.candles || []);
+    const closes = candles.map(c => c.close).filter(v => v != null);
+    if (closes.length < 3) return;
+    drawSparkline(canvasId, closes);
+  } catch(e) {}
+}
+
+function drawSparkline(canvasId, values) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = max - min || 1;
+  const step = w / (values.length - 1);
+  const isUp = values[values.length - 1] >= values[0];
+  ctx.strokeStyle = isUp ? '#C0392B' : '#27AE60';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  values.forEach((v, i) => {
+    const x = i * step;
+    const y = h - ((v - min) / range) * (h - 4) - 2;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+}
+
+/* ===========================================================
+   Radar Chart (score breakdown visualization)
+   =========================================================== */
+function drawRadar(canvasId, breakdown, maxScores) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  const cx = w / 2, cy = h / 2, r = Math.min(cx, cy) - 15;
+  const labels = Object.keys(breakdown);
+  const n = labels.length;
+  if (n < 3) return;
+  const angleStep = (2 * Math.PI) / n;
+  const startAngle = -Math.PI / 2;
+
+  const labelNames = { technical: '技術', fundamental: '基本', institutional: '法人', risk: '風險' };
+  const colors = { technical: '#3498DB', fundamental: '#27AE60', institutional: '#9B59B6', risk: '#E67E22' };
+
+  // Grid circles
+  ctx.strokeStyle = 'rgba(200,160,100,0.2)';
+  ctx.lineWidth = 0.5;
+  for (let level = 1; level <= 3; level++) {
+    const lr = r * (level / 3);
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const angle = startAngle + i * angleStep;
+      const x = cx + lr * Math.cos(angle);
+      const y = cy + lr * Math.sin(angle);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  // Axis lines
+  ctx.strokeStyle = 'rgba(200,160,100,0.3)';
+  labels.forEach((_, i) => {
+    const angle = startAngle + i * angleStep;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + r * Math.cos(angle), cy + r * Math.sin(angle));
+    ctx.stroke();
+  });
+
+  // Data polygon
+  ctx.fillStyle = 'rgba(200,160,100,0.2)';
+  ctx.strokeStyle = 'var(--soft-orange)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  labels.forEach((key, i) => {
+    const val = breakdown[key] || 0;
+    const maxVal = maxScores[key] || 40;
+    const ratio = Math.min(val / maxVal, 1);
+    const angle = startAngle + i * angleStep;
+    const x = cx + r * ratio * Math.cos(angle);
+    const y = cy + r * ratio * Math.sin(angle);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Labels
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-main').trim() || '#3E2F1C';
+  ctx.font = '11px "Noto Sans TC", sans-serif';
+  ctx.textAlign = 'center';
+  labels.forEach((key, i) => {
+    const angle = startAngle + i * angleStep;
+    const lx = cx + (r + 12) * Math.cos(angle);
+    const ly = cy + (r + 12) * Math.sin(angle);
+    const name = labelNames[key] || key;
+    ctx.fillText(name + ' ' + (breakdown[key] || 0), lx, ly + 4);
+  });
+}
+
+/* ===========================================================
+   Dark/Light Theme Toggle
+   =========================================================== */
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('dailystock_theme', next);
+  document.getElementById('themeBtn').textContent = next === 'dark' ? '☀️' : '🌙';
+  // Re-render charts if visible
+  if (mainChart && state.chartData.length) {
+    const bgColor = next === 'dark' ? '#16213e' : '#ffffff';
+    const textColor = next === 'dark' ? '#e8d5b7' : '#5C4A32';
+    const gridColor = next === 'dark' ? '#1e2d4a' : '#f0e8dc';
+    mainChart.applyOptions({ layout: { background: { color: bgColor }, textColor }, grid: { vertLines: { color: gridColor }, horzLines: { color: gridColor } } });
+  }
+}
+
+function initTheme() {
+  const saved = localStorage.getItem('dailystock_theme');
+  if (saved === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.getElementById('themeBtn').textContent = '☀️';
+  }
+}
+
+/* ===========================================================
    Keyboard shortcuts
    =========================================================== */
 document.getElementById('chartSymbolInput').addEventListener('keydown', e => { if (e.key === 'Enter') searchChart(); });
@@ -1323,6 +1614,7 @@ document.getElementById('watchlistInput').addEventListener('keydown', e => { if 
 /* ===========================================================
    Init
    =========================================================== */
+initTheme();
 loadDailyPick();
 loadHistoryList();
 </script>

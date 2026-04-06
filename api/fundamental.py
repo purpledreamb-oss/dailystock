@@ -120,15 +120,24 @@ def fetch_twse_revenue(symbol):
 
 def fetch_twse_institutional(symbol):
     """
-    Fetch latest institutional trading data from TWSE.
-    Returns {"foreign": int, "investment_trust": int, "dealer": int} or None.
+    Fetch up to 10 trading days of institutional trading data from TWSE.
+    Returns list of {"date": "YYYY-MM-DD", "foreign": int, "investment_trust": int, "dealer": int}
+    or None if no data found.
     """
     now = datetime.now(tz=timezone(timedelta(hours=8)))
-    # Try today and previous 5 days (in case of holidays)
-    for days_back in range(0, 6):
+    results = []
+    days_checked = 0
+    days_back = 0
+
+    while len(results) < 10 and days_back < 20:
         try:
             dt = now - timedelta(days=days_back)
+            days_back += 1
+            # Skip weekends
+            if dt.weekday() >= 5:
+                continue
             date_str = dt.strftime("%Y%m%d")
+            date_display = dt.strftime("%Y-%m-%d")
             url = (
                 f"https://www.twse.com.tw/fund/T86"
                 f"?response=json&date={date_str}&selectType=ALL"
@@ -142,43 +151,43 @@ def fetch_twse_institutional(symbol):
                 continue
             data_rows = body.get("data", [])
             for row in data_rows:
-                # Row[0] is stock code, strip whitespace
                 code = str(row[0]).strip()
                 if code == symbol and len(row) >= 7:
                     def parse_int(s):
                         return int(str(s).replace(",", "").replace(" ", ""))
-                    # Columns: code, name, foreign_buy, foreign_sell, foreign_net,
-                    #          investment_trust_net, dealer_net (layout may vary)
-                    # Common layout: [code, name, foreign_net, inv_trust_net, dealer_net, total]
-                    # The exact columns depend on TWSE format; try to extract nets
                     try:
-                        foreign_net = parse_int(row[4])       # 外資淨買賣
-                        trust_net = parse_int(row[7])          # 投信淨買賣
-                        dealer_net = parse_int(row[10])        # 自營商淨買賣
-                        return {
+                        foreign_net = parse_int(row[4])
+                        trust_net = parse_int(row[7])
+                        dealer_net = parse_int(row[10])
+                        results.append({
+                            "date": date_display,
                             "foreign": foreign_net,
                             "investment_trust": trust_net,
                             "dealer": dealer_net,
-                        }
+                        })
+                        break
                     except (ValueError, IndexError):
-                        # Try simpler column layout
                         try:
                             foreign_net = parse_int(row[2])
                             trust_net = parse_int(row[3])
                             dealer_net = parse_int(row[4])
-                            return {
+                            results.append({
+                                "date": date_display,
                                 "foreign": foreign_net,
                                 "investment_trust": trust_net,
                                 "dealer": dealer_net,
-                            }
+                            })
+                            break
                         except (ValueError, IndexError):
                             pass
-            # If we got a valid response but stock not found, stop trying older dates
-            if data_rows:
-                break
         except Exception:
             continue
-    return None
+
+    if not results:
+        return None
+    # Sort by date ascending (oldest first)
+    results.sort(key=lambda r: r["date"])
+    return results
 
 
 def build_fundamental_data(symbol):

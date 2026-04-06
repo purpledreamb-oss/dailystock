@@ -172,6 +172,63 @@ def kv_command(*args):
     return None
 
 
+# ---------------------------------------------------------------------------
+# Dynamic stock discovery (beyond hardcoded candidates)
+# ---------------------------------------------------------------------------
+
+def fetch_yahoo_screener(scr_id, count=20):
+    """Fetch stock symbols from Yahoo Finance predefined screener."""
+    try:
+        url = (
+            f"https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved"
+            f"?scrIds={scr_id}&count={count}"
+        )
+        resp = requests.get(url, headers={"User-Agent": YAHOO_UA}, timeout=8)
+        if resp.status_code != 200:
+            return []
+        data = resp.json()
+        quotes = (
+            data.get("finance", {})
+            .get("result", [{}])[0]
+            .get("quotes", [])
+        )
+        symbols = []
+        for q in quotes:
+            sym = q.get("symbol", "")
+            # Only US stocks (no suffix like .TW, .HK etc.)
+            if sym and "." not in sym and sym.isalpha():
+                symbols.append(sym)
+        return symbols
+    except Exception:
+        return []
+
+
+def fetch_twse_ranking():
+    """Fetch top traded TW stocks from TWSE MI_INDEX20 (成交量排行)."""
+    now = datetime.now(tz=TW_TZ)
+    for days_back in range(0, 6):
+        try:
+            dt = now - timedelta(days=days_back)
+            date_str = dt.strftime("%Y%m%d")
+            url = f"https://www.twse.com.tw/exchangeReport/MI_INDEX20?response=json&date={date_str}"
+            resp = requests.get(url, headers={"User-Agent": YAHOO_UA}, timeout=8)
+            if resp.status_code != 200:
+                continue
+            body = resp.json()
+            if body.get("stat") != "OK":
+                continue
+            symbols = []
+            for row in body.get("data", []):
+                code = str(row[1]).strip() if len(row) > 1 else ""
+                if re.match(r"^\d{4,6}$", code):
+                    symbols.append(code)
+            if symbols:
+                return symbols[:20]
+        except Exception:
+            continue
+    return []
+
+
 def is_trading_day(date_str, market):
     dt = datetime.strptime(date_str, "%Y-%m-%d")
     if dt.weekday() >= 5:
@@ -827,12 +884,36 @@ def run_pick_pipeline(force=False):
 
     steps.append(f"Trading day check: TW={tw_trading}, US={us_trading}")
 
+    # --- Phase A0: Dynamic stock discovery ---
+    dynamic_us = []
+    dynamic_tw = []
+    try:
+        with ThreadPoolExecutor(max_workers=3) as disc_pool:
+            futures = {}
+            if us_trading:
+                futures["gainers"] = disc_pool.submit(fetch_yahoo_screener, "day_gainers", 20)
+                futures["actives"] = disc_pool.submit(fetch_yahoo_screener, "most_actives", 20)
+            if tw_trading:
+                futures["tw_rank"] = disc_pool.submit(fetch_twse_ranking)
+            for key, fut in futures.items():
+                result_list = fut.result()
+                if key == "tw_rank":
+                    dynamic_tw.extend(result_list)
+                else:
+                    dynamic_us.extend(result_list)
+    except Exception:
+        pass
+
+    steps.append(f"Dynamic discovery: US={len(set(dynamic_us))}, TW={len(set(dynamic_tw))}")
+
     # --- Phase A: Fetch technical data in parallel ---
     all_candidates = []
     if us_trading:
         all_candidates.extend(US_CANDIDATES)
+        all_candidates.extend(dynamic_us)
     if tw_trading:
         all_candidates.extend(TW_CANDIDATES)
+        all_candidates.extend(dynamic_tw)
     # Deduplicate while preserving order
     all_candidates = list(dict.fromkeys(all_candidates))
 
@@ -871,18 +952,21 @@ def run_pick_pipeline(force=False):
     if tw_trading:
         steps.append(f"Institutional data fetched: {len(inst_data)} stocks")
 
-    # --- Phase D: Score all candidates ---
+    # --- Phase D: Score all candidates (including dynamic discoveries) ---
     us_scores = []
     tw_scores = []
 
-    for sym in US_CANDIDATES:
+    all_us = list(dict.fromkeys(list(US_CANDIDATES) + dynamic_us))
+    all_tw = list(dict.fromkeys(list(TW_CANDIDATES) + dynamic_tw))
+
+    for sym in all_us:
         if sym not in chart_data:
             continue
         score, bd = score_us_stock(chart_data[sym], fund_data.get(sym))
         if score > 0:
             us_scores.append((sym, score, bd))
 
-    for sym in TW_CANDIDATES:
+    for sym in all_tw:
         if sym not in chart_data:
             continue
         score, bd = score_tw_stock(chart_data[sym], fund_data.get(sym), inst_data.get(sym))
