@@ -217,7 +217,7 @@ def _fetch_yahoo_data(symbol):
         if crumb:
             url = (
                 f"https://query2.finance.yahoo.com/v10/finance/quoteSummary/{yahoo_symbol}"
-                f"?modules=defaultKeyStatistics,summaryDetail,price,incomeStatementHistoryQuarterly,incomeStatementHistory"
+                f"?modules=defaultKeyStatistics,summaryDetail,price,financialData,incomeStatementHistoryQuarterly,incomeStatementHistory"
                 f"&crumb={crumb}"
             )
             resp = session.get(url, timeout=10)
@@ -241,6 +241,11 @@ def _fetch_yahoo_data(symbol):
                     if data.get("dividendYield") is not None:
                         data["dividendYield"] = round(data["dividendYield"] * 100, 2)
                     data["marketCap"] = raw_val(price_mod, "marketCap") or raw_val(summary, "marketCap")
+
+                    fin_data = modules.get("financialData", {})
+                    roe = raw_val(fin_data, "returnOnEquity")
+                    if roe is not None:
+                        data["roe"] = round(roe * 100, 2)
 
                     if not data.get("name"):
                         data["name"] = price_mod.get("shortName") or price_mod.get("longName") or symbol
@@ -289,6 +294,7 @@ def build_fundamental_data(symbol):
         "dividendYield": None,
         "marketCap": None,
         "eps": None,
+        "roe": None,
         "fiftyTwoWeekHigh": None,
         "fiftyTwoWeekLow": None,
         "regularMarketPrice": None,
